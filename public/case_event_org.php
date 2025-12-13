@@ -1,0 +1,27 @@
+<?php
+require_once __DIR__ . '/../inc/auth.php'; require_once __DIR__ . '/../inc/db.php'; require_login();
+$case_event_id=(int)($_GET['id']??0);
+$st=$pdo->prepare("SELECT ce.*, de.diagnosis, de.category, de.icd10, de.source, de.caveat1, de.caveat2, de.caveat3, de.outcome1, de.outcome2, de.outcome3, de.lcat1, de.lcat1_met1, de.lcat1_met2, de.lcat1_notmet, de.lcat2, de.lcat2_met1, de.lcat2_notmet, p.patient_code, p.index_drug_id FROM case_event ce JOIN dictionary_event de ON de.id=ce.dict_event_id JOIN patients p ON p.id=ce.patient_id WHERE ce.id=?");
+$st->execute([$case_event_id]); $ev=$st->fetch(); if(!$ev){ http_response_code(404); echo "Case event not found"; exit; }
+$cons=$pdo->prepare("SELECT d.id,d.name FROM patient_concomitant_drug pcd JOIN drugs d ON d.id=pcd.drug_id WHERE pcd.patient_id=? AND d.id<>? ORDER BY d.name");
+$cons->execute([$ev['patient_id'],$ev['index_drug_id']]); $concomitants=$cons->fetchAll();
+?><!doctype html><html><head><meta charset="utf-8"><title>Adjudicate: <?= htmlspecialchars($ev['diagnosis']) ?> (<?= htmlspecialchars($ev['patient_code']) ?>)</title><link rel="stylesheet" href="/assets/styles.css"><script src="/assets/js/api.js" defer></script><script src="/assets/js/adjudication.js" defer></script></head><body>
+<header><div class="brand">PHOENIX Adjudication</div><nav><a href="patient.php?id=<?= $ev['patient_id'] ?>">Back to Patient</a><a href="logout.php">Logout</a></nav></header>
+<main class="container">
+<section class="card"><h2>Event</h2><p><strong>Phenotype:</strong> <?= htmlspecialchars($ev['diagnosis']) ?> (<?= htmlspecialchars($ev['category']) ?>)</p><p><strong>Source:</strong> <?= htmlspecialchars($ev['source']) ?> <?= $ev['icd10'] ? '(' . htmlspecialchars($ev['icd10']) . ')' : '' ?></p>
+<details><summary>Dictionary notes</summary><ul><?php if($ev['caveat1']): ?><li><strong>Caveat 1:</strong> <?= htmlspecialchars($ev['caveat1']) ?></li><?php endif; ?><?php if($ev['outcome1']): ?><li><strong>Outcome 1:</strong> <?= htmlspecialchars($ev['outcome1']) ?></li><?php endif; ?><?php if($ev['caveat2']): ?><li><strong>Caveat 2:</strong> <?= htmlspecialchars($ev['caveat2']) ?></li><?php endif; ?><?php if($ev['outcome2']): ?><li><strong>Outcome 2:</strong> <?= htmlspecialchars($ev['outcome2']) ?></li><?php endif; ?><?php if($ev['caveat3']): ?><li><strong>Caveat 3:</strong> <?= htmlspecialchars($ev['caveat3']) ?></li><?php endif; ?><?php if($ev['outcome3']): ?><li><strong>Outcome 3:</strong> <?= htmlspecialchars($ev['outcome3']) ?></li><?php endif; ?></ul>
+<p><strong>LCAT 1:</strong> <?= htmlspecialchars($ev['lcat1']) ?></p><ul><?php if($ev['lcat1_met1']): ?><li>Met 1: <?= htmlspecialchars($ev['lcat1_met1']) ?></li><?php endif; ?><?php if($ev['lcat1_met2']): ?><li>Met 2: <?= htmlspecialchars($ev['lcat1_met2']) ?></li><?php endif; ?><?php if($ev['lcat1_notmet']): ?><li>Not Met: <?= htmlspecialchars($ev['lcat1_notmet']) ?></li><?php endif; ?></ul>
+<p><strong>LCAT 2:</strong> <?= htmlspecialchars($ev['lcat2']) ?></p><ul><?php if($ev['lcat2_met1']): ?><li>Met 1: <?= htmlspecialchars($ev['lcat2_met1']) ?></li><?php endif; ?><?php if($ev['lcat2_notmet']): ?><li>Not Met: <?= htmlspecialchars($ev['lcat2_notmet']) ?></li><?php endif; ?></ul></details></section>
+<section class="card"><h2>Adjudication Wizard</h2>
+<form id="adj-form"><input type="hidden" name="case_event_id" value="<?= $case_event_id ?>"><label>Framework
+<select name="framework" id="framework"><option value="WHO-UMC">WHO-UMC</option><option value="Naranjo">Naranjo</option></select></label>
+<div id="framework-questions"></div>
+<label>Severity <select name="severity"><option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option></select></label>
+<label>Expectedness <select name="expectedness"><option value="Expected">Expected</option><option value="Unexpected">Unexpected</option><option value="Not_Assessable">Not_Assessable</option></select></label>
+<label>Attribution to Index Drug <select name="index_attribution"><option value="Yes">Yes</option><option value="No">No</option><option value="Indeterminate">Indeterminate</option></select></label>
+<fieldset><legend>Suspected Concomitants</legend><?php foreach($concomitants as $c): ?><label><input type="checkbox" name="suspected_concomitants[]" value="<?= $c['id'] ?>"> <?= htmlspecialchars($c['name']) ?></label><?php endforeach; ?></fieldset>
+<label>Rationale <textarea name="rationale" rows="4" placeholder="Explain reasoning & evidence..."></textarea></label>
+<label>Missing info</label><div class="checkboxes"><label><input type="checkbox" name="missing_info[]" value="Timing"> Timing of exposure/onset</label><label><input type="checkbox" name="missing_info[]" value="Dechallenge/Rechallenge"> Dechallenge/Rechallenge</label><label><input type="checkbox" name="missing_info[]" value="Labs"> Relevant labs</label><label><input type="checkbox" name="missing_info[]" value="Alternative causes"> Alternative causes</label></div>
+<div class="actions"><button type="button" id="calc-score">Auto-score</button><span id="auto-score"></span>
+<label>Causality class <select name="causality" id="causality"><option value="Definite">Definite</option><option value="Probable">Probable</option><option value="Possible">Possible</option><option value="Unrelated">Unrelated</option><option value="Unable">Unable</option></select></label></div>
+<button type="submit">Submit Adjudication</button></form></section></main></body></html>
