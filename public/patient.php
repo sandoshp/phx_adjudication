@@ -188,12 +188,30 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastErr = null;
     for (const u of urls) {
       try {
+        console.log('Fetching events from:', u);
         const r = await fetch(u, { credentials:'same-origin', headers:{ 'Accept':'application/json' }, cache:'no-store' });
-        if (!r.ok) { lastErr = new Error(`GET ${u} -> HTTP ${r.status}`); continue; }
+        console.log('Response status:', r.status, 'Content-Type:', r.headers.get('content-type'));
+
+        if (!r.ok) {
+          const text = await r.text();
+          console.error(`HTTP ${r.status} response:`, text);
+          lastErr = new Error(`HTTP ${r.status}: ${text.substring(0, 100)}`);
+          continue;
+        }
+
         const ct = r.headers.get('content-type') || '';
-        if (!ct.includes('application/json')) { lastErr = new Error(`GET ${u} -> non-JSON response`); continue; }
+        if (!ct.includes('application/json')) {
+          const text = await r.text();
+          console.error('Non-JSON response:', text);
+          lastErr = new Error(`Non-JSON response (${ct}): ${text.substring(0, 100)}`);
+          continue;
+        }
+
         return r.json();
-      } catch (e) { lastErr = e; }
+      } catch (e) {
+        console.error('Fetch error:', e);
+        lastErr = e;
+      }
     }
     throw lastErr || new Error('Failed to fetch events');
   }
@@ -208,12 +226,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function generateEvents() {
     if (window.api?.generateCaseEvents) return api.generateCaseEvents(patientId);
-    const r = await fetch('../api/case_events.php', {
-      method:'POST', credentials:'same-origin',
+
+    const url = '../api/case_events.php';
+    const payload = { action:'generate', patient_id: patientId };
+    console.log('Generating events with payload:', payload);
+
+    const r = await fetch(url, {
+      method:'POST',
+      credentials:'same-origin',
       headers:{ 'Accept':'application/json', 'Content-Type':'application/json' },
-      body: JSON.stringify({ action:'generate', patient_id: patientId })
+      body: JSON.stringify(payload)
     });
-    if (!r.ok) throw new Error(`POST ../api/case_events.php -> HTTP ${r.status}`);
+
+    console.log('Generate response status:', r.status);
+
+    if (!r.ok) {
+      const text = await r.text();
+      console.error(`HTTP ${r.status} response:`, text);
+      throw new Error(`HTTP ${r.status}: ${text.substring(0, 100)}`);
+    }
+
     return r.json();
   }
 
@@ -231,9 +263,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const events = await fetchEvents();
+      console.log('Loaded events:', events);
       wrap.innerHTML = '';
 
-      if (!Array.isArray(events) || events.length === 0) {
+      if (!Array.isArray(events)) {
+        console.error('Events is not an array:', events);
+        wrap.innerHTML = '<div class="card-panel orange darken-2 white-text"><i class="material-icons left">warning</i>Unexpected response format. Check console for details.</div>';
+        return;
+      }
+
+      if (events.length === 0) {
         wrap.innerHTML = '<p class="center-align grey-text">No events yet. Click "Generate from Dictionary" to create events.</p>';
         return;
       }
@@ -301,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${escapeHtml(r.indexDrug)}</td>
           <td>${escapeHtml(conc)}</td>
           <td class="center-align">
-            <a href="case_event.php?id=${encapeURIComponent(r.linkId)}" class="btn-small waves-effect waves-light blue">
+            <a href="case_event.php?id=${encodeURIComponent(r.linkId)}" class="btn-small waves-effect waves-light blue">
               <i class="material-icons left tiny">edit</i>
               Adjudicate
             </a>
@@ -313,7 +352,11 @@ document.addEventListener('DOMContentLoaded', () => {
       wrap.appendChild(table);
     } catch (e) {
       console.error('Failed to load events:', e);
-      wrap.innerHTML = '<div class="card-panel red darken-2 white-text"><i class="material-icons left">error</i>Failed to load events. Check console for details.</div>';
+      wrap.innerHTML = `<div class="card-panel red darken-2 white-text">
+        <i class="material-icons left">error</i>
+        Failed to load events: ${escapeHtml(e.message)}<br>
+        <small>Check browser console (F12) for details.</small>
+      </div>`;
     }
   }
 
@@ -324,12 +367,24 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Generating...';
 
     try {
+      console.log('Generating events for patient:', patientId);
       const out = await generateEvents();
-      if (!out?.ok) throw new Error(out?.error || 'Generation failed');
+      console.log('Generate response:', out);
+
+      if (!out?.ok) {
+        throw new Error(out?.error || 'Generation failed');
+      }
+
       await refreshEvents();
 
-      showToast(`Generated ${out.inserted ?? 0} events`, 'success');
-      btn.innerHTML = '<i class="material-icons left">check</i>Generated ' + (out.inserted ?? 0);
+      const count = out.inserted ?? 0;
+      if (count === 0) {
+        showToast('No new events to generate (all events already exist)', 'info');
+      } else {
+        showToast(`Generated ${count} new event${count === 1 ? '' : 's'}`, 'success');
+      }
+
+      btn.innerHTML = '<i class="material-icons left">check</i>Generated ' + count;
       setTimeout(() => { btn.innerHTML = prevHTML; }, 2000);
     } catch (e) {
       console.error('Generate error:', e);
