@@ -1,0 +1,47 @@
+# Environment
+.env
+inc/config.php
+
+# Dependencies
+/vendor/
+composer.lock
+
+# Backups
+/backups/*.sql
+/backups/*.tar.gz
+
+# Uploaded Files
+/uploads/*
+!/uploads/.gitkeep
+
+# Data Files
+/data/*.xlsx
+/data/*.csv
+!/data/.gitkeep
+
+# Logs
+/logs/*.log
+!/logs/.gitkeep
+
+# Cache
+/cache/*
+!/cache/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Temporary
+/tmp/*
+!/tmp/.gitkeep
+
+# Session
+/sessions/*
+!/sessions/.gitkeep
