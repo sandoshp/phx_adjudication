@@ -1,0 +1,697 @@
+/**
+ * PHOENIX Dark Theme for Materialize CSS
+ * Based on Blue Grey color palette with custom dark mode
+ */
+
+:root {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --bg-input: #334155;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #3b82f6;
+    --accent-hover: #60a5fa;
+    --danger: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --border: #334155;
+}
+
+/* ==================== GLOBAL STYLES ==================== */
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* ==================== CARDS ==================== */
+
+.card {
+    background-color: var(--bg-card);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card .card-title {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.card .card-content {
+    color: var(--text-secondary);
+}
+
+.card .card-action {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--border);
+}
+
+.card .card-action a {
+    color: var(--accent);
+}
+
+/* ==================== NAVIGATION ==================== */
+
+nav {
+    background-color: #263238;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+nav .brand-logo {
+    color: var(--text-primary);
+}
+
+nav ul a {
+    color: var(--text-secondary);
+    transition: background-color 0.3s;
+}
+
+nav ul a:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.sidenav {
+    background-color: var(--bg-card);
+}
+
+.sidenav li > a {
+    color: var(--text-primary);
+}
+
+.sidenav li > a:hover {
+    background-color: var(--bg-secondary);
+}
+
+.sidenav li > a > i.material-icons {
+    color: var(--text-secondary);
+}
+
+/* ==================== FORMS ==================== */
+
+input:not([type]),
+input[type=text]:not(.browser-default),
+input[type=password]:not(.browser-default),
+input[type=email]:not(.browser-default),
+input[type=date]:not(.browser-default),
+input[type=number]:not(.browser-default),
+input[type=search]:not(.browser-default),
+input[type=time]:not(.browser-default),
+input[type=url]:not(.browser-default),
+input[type=tel]:not(.browser-default),
+textarea.materialize-textarea {
+    background-color: var(--bg-input);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    box-sizing: border-box;
+    padding: 8px;
+    border-radius: 4px 4px 0 0;
+}
+
+input:not([type]):focus,
+input[type=text]:not(.browser-default):focus,
+input[type=password]:not(.browser-default):focus,
+input[type=email]:not(.browser-default):focus,
+input[type=date]:not(.browser-default):focus,
+input[type=number]:not(.browser-default):focus,
+input[type=search]:not(.browser-default):focus,
+input[type=time]:not(.browser-default):focus,
+input[type=url]:not(.browser-default):focus,
+input[type=tel]:not(.browser-default):focus,
+textarea.materialize-textarea:focus {
+    border-bottom: 2px solid var(--accent);
+    box-shadow: 0 1px 0 0 var(--accent);
+    background-color: var(--bg-input);
+}
+
+label {
+    color: var(--text-secondary);
+}
+
+label.active {
+    color: var(--accent);
+}
+
+/* Placeholder text */
+::-webkit-input-placeholder {
+    color: var(--text-muted);
+}
+::-moz-placeholder {
+    color: var(--text-muted);
+}
+:-ms-input-placeholder {
+    color: var(--text-muted);
+}
+::placeholder {
+    color: var(--text-muted);
+}
+
+/* ==================== SELECT DROPDOWNS ==================== */
+
+.select-wrapper input.select-dropdown {
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border);
+}
+
+.select-wrapper input.select-dropdown:focus {
+    border-bottom: 2px solid var(--accent);
+}
+
+.dropdown-content {
+    background-color: var(--bg-card);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.dropdown-content li > a,
+.dropdown-content li > span {
+    color: var(--text-primary);
+}
+
+.dropdown-content li:hover,
+.dropdown-content li.active {
+    background-color: var(--bg-secondary);
+}
+
+.dropdown-content li.disabled,
+.dropdown-content li.disabled > span,
+.dropdown-content li.optgroup {
+    color: var(--text-muted);
+}
+
+.select-dropdown li.disabled > span {
+    color: var(--text-muted);
+}
+
+.caret {
+    fill: var(--text-secondary);
+}
+
+/* ==================== BUTTONS ==================== */
+
+.btn,
+.btn-large,
+.btn-small {
+    background-color: var(--accent);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    text-transform: none;
+}
+
+.btn:hover,
+.btn-large:hover,
+.btn-small:hover {
+    background-color: var(--accent-hover);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.btn-flat {
+    color: var(--accent);
+}
+
+.btn-flat:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Button variants */
+.btn.green,
+.btn-large.green {
+    background-color: var(--success);
+}
+
+.btn.red,
+.btn-large.red {
+    background-color: var(--danger);
+}
+
+.btn.orange,
+.btn-large.orange {
+    background-color: var(--warning);
+}
+
+/* ==================== TABLES ==================== */
+
+table {
+    background-color: var(--bg-card);
+}
+
+table.striped > tbody > tr:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+table.striped > tbody > tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+th {
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+}
+
+td {
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+/* ==================== COLLECTIONS ==================== */
+
+.collection {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+}
+
+.collection .collection-item {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.collection .collection-item:hover {
+    background-color: var(--bg-secondary);
+}
+
+.collection .collection-item.active {
+    background-color: var(--accent);
+    color: white;
+}
+
+.collection a.collection-item {
+    color: var(--text-primary);
+}
+
+/* ==================== MODALS ==================== */
+
+.modal {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.modal .modal-footer {
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+}
+
+.modal h4 {
+    color: var(--text-primary);
+}
+
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* ==================== CHIPS ==================== */
+
+.chip {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.chip i.close {
+    color: var(--text-secondary);
+}
+
+.chip:hover i.close {
+    color: var(--text-primary);
+}
+
+/* ==================== BADGES ==================== */
+
+.badge {
+    background-color: var(--accent);
+    color: white;
+}
+
+.badge.new {
+    font-weight: 500;
+}
+
+/* ==================== TOOLTIPS ==================== */
+
+.material-tooltip {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+/* ==================== TABS ==================== */
+
+.tabs {
+    background-color: var(--bg-card);
+}
+
+.tabs .tab a {
+    color: var(--text-secondary);
+}
+
+.tabs .tab a:hover,
+.tabs .tab a.active {
+    color: var(--accent);
+}
+
+.tabs .indicator {
+    background-color: var(--accent);
+}
+
+/* ==================== COLLAPSIBLES ==================== */
+
+.collapsible {
+    border: none;
+}
+
+.collapsible-header {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.collapsible-header:hover {
+    background-color: var(--bg-secondary);
+}
+
+.collapsible-body {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+/* ==================== PROGRESS BARS ==================== */
+
+.progress {
+    background-color: var(--bg-secondary);
+}
+
+.progress .determinate {
+    background-color: var(--accent);
+}
+
+.progress .indeterminate {
+    background-color: var(--accent);
+}
+
+/* ==================== PRELOADER ==================== */
+
+.preloader-wrapper.small,
+.preloader-wrapper.medium,
+.preloader-wrapper.big {
+    width: 48px;
+    height: 48px;
+}
+
+/* ==================== CUSTOM STATUS BADGES ==================== */
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.status-badge.open {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.status-badge.info_requested {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-badge.submitted {
+    background-color: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.status-badge.consensus {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.closed {
+    background-color: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* ==================== SEVERITY INDICATORS ==================== */
+
+.severity-mild {
+    color: var(--success);
+    font-weight: 500;
+}
+
+.severity-moderate {
+    color: var(--warning);
+    font-weight: 500;
+}
+
+.severity-severe {
+    color: var(--danger);
+    font-weight: 500;
+}
+
+/* ==================== LOADING OVERLAY ==================== */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 9999;
+}
+
+/* ==================== TOAST CUSTOMIZATION ==================== */
+
+#toast-container {
+    top: auto !important;
+    right: auto !important;
+    bottom: 10%;
+    left: 7%;
+}
+
+@media only screen and (max-width: 600px) {
+    #toast-container {
+        left: 5%;
+        right: 5%;
+        bottom: 5%;
+    }
+}
+
+.toast {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ==================== FILE INPUT ==================== */
+
+.file-field .btn {
+    float: left;
+    height: 3rem;
+    line-height: 3rem;
+}
+
+.file-field input[type=text] {
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    background-color: var(--bg-input);
+}
+
+.file-field .file-path-wrapper {
+    overflow: hidden;
+    padding-left: 10px;
+}
+
+/* ==================== SWITCHES ==================== */
+
+.switch label {
+    color: var(--text-secondary);
+}
+
+.switch label .lever {
+    background-color: var(--bg-secondary);
+}
+
+.switch label input[type=checkbox]:checked + .lever {
+    background-color: rgba(59, 130, 246, 0.5);
+}
+
+.switch label input[type=checkbox]:checked + .lever:after {
+    background-color: var(--accent);
+}
+
+/* ==================== CHECKBOXES & RADIO BUTTONS ==================== */
+
+[type="checkbox"]:checked + span:not(.lever):before {
+    border-right: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+}
+
+[type="checkbox"].filled-in:checked + span:not(.lever):after {
+    border: 2px solid var(--accent);
+    background-color: var(--accent);
+}
+
+[type="radio"]:checked + span:after,
+[type="radio"].with-gap:checked + span:after {
+    background-color: var(--accent);
+}
+
+[type="radio"]:checked + span:after,
+[type="radio"].with-gap:checked + span:before,
+[type="radio"].with-gap:checked + span:after {
+    border: 2px solid var(--accent);
+}
+
+/* ==================== DATEPICKER ==================== */
+
+.datepicker-modal {
+    background-color: var(--bg-card);
+}
+
+.datepicker-date-display {
+    background-color: var(--accent);
+}
+
+.datepicker-table td.is-selected {
+    background-color: var(--accent);
+}
+
+.datepicker-table td.is-today {
+    color: var(--accent);
+}
+
+/* ==================== RESPONSIVE ADJUSTMENTS ==================== */
+
+@media only screen and (max-width: 992px) {
+    .container {
+        width: 95%;
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    .card .card-content {
+        padding: 16px;
+    }
+
+    .btn,
+    .btn-large,
+    .btn-small {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.text-primary {
+    color: var(--text-primary) !important;
+}
+
+.bg-card {
+    background-color: var(--bg-card) !important;
+}
+
+.border {
+    border: 1px solid var(--border) !important;
+}
+
+.rounded {
+    border-radius: 8px !important;
+}
+
+.shadow {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==================== CUSTOM COMPONENTS ==================== */
+
+/* Info cards */
+.info-card {
+    padding: 16px;
+    border-left: 4px solid var(--info);
+    background-color: rgba(59, 130, 246, 0.1);
+    border-radius: 4px;
+    margin: 16px 0;
+}
+
+.warning-card {
+    padding: 16px;
+    border-left: 4px solid var(--warning);
+    background-color: rgba(245, 158, 11, 0.1);
+    border-radius: 4px;
+    margin: 16px 0;
+}
+
+.success-card {
+    padding: 16px;
+    border-left: 4px solid var(--success);
+    background-color: rgba(16, 185, 129, 0.1);
+    border-radius: 4px;
+    margin: 16px 0;
+}
+
+.danger-card {
+    padding: 16px;
+    border-left: 4px solid var(--danger);
+    background-color: rgba(239, 68, 68, 0.1);
+    border-radius: 4px;
+    margin: 16px 0;
+}
+
+/* Timeline component */
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20px;
+    height: 100%;
+    width: 2px;
+    background: var(--border);
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    margin-bottom: 30px;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-primary);
+}
