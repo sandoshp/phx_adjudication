@@ -153,7 +153,7 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
                 <div class="row">
                     <div class="input-field col s12 m6">
                         <i class="material-icons prefix">search</i>
-                        <input type="text" id="search-patients" placeholder="Search by patient code...">
+                        <input type="text" id="search-patients" placeholder="Search patients...">
                         <label for="search-patients">Search</label>
                     </div>
                     <div class="input-field col s12 m6">
@@ -163,6 +163,10 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
                         <label>Filter by Drug</label>
                     </div>
                 </div>
+                <p class="grey-text">
+                    <i class="material-icons tiny">info</i>
+                    <small>Click column headers to sort. Use search box to filter results.</small>
+                </p>
 
                 <div id="patients-list">
                     <div class="progress">
@@ -175,12 +179,46 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
     </div>
 </div>
 
+<!-- Concomitant Drugs Modal -->
+<div id="concomitant-modal" class="modal modal-fixed-footer">
+    <div class="modal-content">
+        <h4>
+            <i class="material-icons left">medication</i>
+            Concomitant Drugs — <span id="modal-patient-code"></span>
+        </h4>
+        <p>Index drug: <strong id="modal-index-drug">ABACAVIR</strong></p>
+
+        <div id="concomitant-drugs-list">
+            <p class="center-align grey-text">Loading drugs...</p>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn-flat waves-effect waves-light" onclick="M.Modal.getInstance(document.getElementById('concomitant-modal')).close()">
+            Cancel
+        </button>
+        <button id="save-concomitants" class="btn waves-effect waves-light green">
+            <i class="material-icons left">save</i>
+            Save Concomitants
+        </button>
+    </div>
+</div>
+
+<!-- Table Utilities Script -->
+<script src="assets/js/table-utils.js"></script>
+
 <script>
+let currentPatientId = null;
+let allDrugs = [];
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize modals
+    M.Modal.init(document.querySelectorAll('.modal'));
+
     loadDrugs();
     loadPatients();
     loadStatistics();
     wireAddPatientForm();
+    wireConcomitantModal();
 });
 
 async function loadDrugs() {
@@ -202,6 +240,9 @@ async function loadDrugs() {
         }
 
         drugs.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Store for concomitant modal
+        allDrugs = drugs;
 
         // Populate add patient dropdown
         select.innerHTML = '<option value="" disabled selected>— Select index drug —</option>' +
@@ -271,9 +312,9 @@ async function loadPatients() {
                             <i class="material-icons left tiny">open_in_new</i>
                             OPEN
                         </a>
-                        <a href="patient_concomitants.php?id=${p.id}" class="btn-small waves-effect waves-light orange">
+                        <a href="#concomitant-modal" class="btn-small waves-effect waves-light orange modal-trigger" onclick="openConcomitantModal(${p.id}, '${escapeHtml(p.patient_code)}')">
                             <i class="material-icons left tiny">add</i>
-                            ADD DRUGS
+                            ADD CONCOMITANT DRUGS
                         </a>
                     </td>
                 </tr>
@@ -286,6 +327,11 @@ async function loadPatients() {
         `;
 
         container.innerHTML = html;
+
+        // Initialize table sorting and searching
+        setTimeout(() => {
+            initializeTable('#patients-list table', '#search-patients');
+        }, 100);
 
     } catch (err) {
         console.error('Failed to load patients:', err);
@@ -365,6 +411,160 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+async function openConcomitantModal(patientId, patientCode) {
+    currentPatientId = patientId;
+    document.getElementById('modal-patient-code').textContent = patientCode;
+
+    // Fetch patient details to get index drug
+    try {
+        const pRes = await fetch(`../api/patients.php?id=${patientId}`, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (pRes.ok) {
+            const patient = await pRes.json();
+            document.getElementById('modal-index-drug').textContent = patient.index_drug_name || 'N/A';
+        }
+    } catch (err) {
+        console.error('Failed to load patient details:', err);
+    }
+
+    // Load existing concomitants for this patient
+    await loadConcomitantsForModal(patientId);
+}
+
+async function loadConcomitantsForModal(patientId) {
+    const container = document.getElementById('concomitant-drugs-list');
+    container.innerHTML = '<p class="center-align grey-text">Loading drugs...</p>';
+
+    try {
+        // Fetch existing concomitants
+        const res = await fetch(`../api/patient_concomitants.php?patient_id=${patientId}`, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        });
+
+        let existingConcomitants = [];
+        if (res.ok) {
+            existingConcomitants = await res.json();
+        }
+
+        // Build table with all drugs
+        let html = `
+            <table class="striped highlight responsive-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">Use</th>
+                        <th>Drug</th>
+                        <th>Start Date</th>
+                        <th>Stop Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        allDrugs.forEach(drug => {
+            const existing = existingConcomitants.find(c => parseInt(c.drug_id) === parseInt(drug.id));
+            const isChecked = existing ? 'checked' : '';
+            const startDate = existing ? existing.start_date : '';
+            const stopDate = existing ? existing.stop_date : '';
+
+            html += `
+                <tr>
+                    <td>
+                        <label>
+                            <input type="checkbox" class="drug-checkbox" data-drug-id="${drug.id}" ${isChecked} />
+                            <span></span>
+                        </label>
+                    </td>
+                    <td><strong>${escapeHtml(drug.name)}</strong></td>
+                    <td>
+                        <input type="date" class="drug-start-date" data-drug-id="${drug.id}" value="${startDate}" style="border: 1px solid #ddd; padding: 5px; border-radius: 3px;" />
+                    </td>
+                    <td>
+                        <input type="date" class="drug-stop-date" data-drug-id="${drug.id}" value="${stopDate}" style="border: 1px solid #ddd; padding: 5px; border-radius: 3px;" />
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error('Failed to load concomitants:', err);
+        container.innerHTML = '<p class="center-align red-text">Failed to load drugs</p>';
+    }
+}
+
+function wireConcomitantModal() {
+    const saveBtn = document.getElementById('save-concomitants');
+
+    saveBtn.addEventListener('click', async () => {
+        if (!currentPatientId) return;
+
+        // Collect selected drugs with dates
+        const checkboxes = document.querySelectorAll('.drug-checkbox:checked');
+        const concomitants = [];
+
+        checkboxes.forEach(cb => {
+            const drugId = parseInt(cb.dataset.drugId);
+            const startDateInput = document.querySelector(`.drug-start-date[data-drug-id="${drugId}"]`);
+            const stopDateInput = document.querySelector(`.drug-stop-date[data-drug-id="${drugId}"]`);
+
+            concomitants.push({
+                drug_id: drugId,
+                start_date: startDateInput.value || null,
+                stop_date: stopDateInput.value || null
+            });
+        });
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Saving...';
+
+        try {
+            const res = await fetch('../api/patient_concomitants.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    patient_id: currentPatientId,
+                    concomitants: concomitants
+                })
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`HTTP ${res.status}: ${text}`);
+            }
+
+            const result = await res.json();
+
+            if (result.ok) {
+                M.toast({ html: '<i class="material-icons left">check_circle</i>Concomitants saved!', classes: 'green' });
+                M.Modal.getInstance(document.getElementById('concomitant-modal')).close();
+                await loadPatients(); // Refresh patient list
+            } else {
+                throw new Error(result.error || 'Failed to save');
+            }
+        } catch (err) {
+            console.error('Save error:', err);
+            M.toast({ html: '<i class="material-icons left">error</i>Failed to save: ' + err.message, classes: 'red' });
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="material-icons left">save</i>Save Concomitants';
+        }
+    });
 }
 </script>
 

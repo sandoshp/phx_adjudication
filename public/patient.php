@@ -151,12 +151,23 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
                 </span>
                 <p class="grey-text">Generate events from dictionary and adjudicate outcomes</p>
 
-                <div style="margin-top: 20px; margin-bottom: 20px;">
-                    <button id="generate-events" class="btn waves-effect waves-light blue">
-                        <i class="material-icons left">autorenew</i>
-                        Generate from Dictionary
-                    </button>
+                <div class="row" style="margin-top: 20px;">
+                    <div class="col s12 m6">
+                        <button id="generate-events" class="btn waves-effect waves-light blue">
+                            <i class="material-icons left">autorenew</i>
+                            Generate from Dictionary
+                        </button>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">search</i>
+                        <input type="text" id="search-events" placeholder="Search events...">
+                        <label for="search-events">Search Events</label>
+                    </div>
                 </div>
+                <p class="grey-text">
+                    <i class="material-icons tiny">info</i>
+                    <small>Click column headers to sort. Use search box to filter results.</small>
+                </p>
 
                 <div id="events">
                     <div class="progress">
@@ -168,6 +179,9 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
         </div>
     </div>
 </div>
+
+<!-- Table Utilities Script -->
+<script src="assets/js/table-utils.js"></script>
 
 <script>
 const patientId      = <?= json_encode($patient_id) ?>;
@@ -355,6 +369,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       wrap.appendChild(table);
+
+      // Initialize table sorting and searching
+      setTimeout(() => {
+        initializeTable('#events table', '#search-events');
+      }, 100);
     } catch (e) {
       console.error('Failed to load events:', e);
       wrap.innerHTML = `<div class="card-panel red darken-2 white-text">

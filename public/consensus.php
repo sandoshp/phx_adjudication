@@ -169,6 +169,15 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
                 <?php if (empty($adjudications)): ?>
                     <p class="grey-text center-align">No adjudications submitted yet.</p>
                 <?php else: ?>
+                    <div class="input-field" style="margin-top: 20px;">
+                        <i class="material-icons prefix">search</i>
+                        <input type="text" id="search-adjudications" placeholder="Search adjudications...">
+                        <label for="search-adjudications">Search</label>
+                    </div>
+                    <p class="grey-text">
+                        <i class="material-icons tiny">info</i>
+                        <small>Click column headers to sort. Use search box to filter results.</small>
+                    </p>
                     <table class="striped highlight responsive-table" style="margin-top: 20px;">
                         <thead>
                             <tr>
@@ -374,11 +383,20 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
     </div>
 </div>
 
+<!-- Table Utilities Script -->
+<script src="assets/js/table-utils.js"></script>
+
 <script>
 // Initialize Materialize components
 document.addEventListener('DOMContentLoaded', function() {
     M.CharacterCounter.init(document.querySelectorAll('textarea[data-length]'));
     M.updateTextFields();
+
+    // Initialize table sorting and searching
+    const adjTable = document.querySelector('.striped.highlight.responsive-table');
+    if (adjTable) {
+        initializeTable('.striped.highlight.responsive-table', '#search-adjudications');
+    }
 });
 
 // Handle form submission
