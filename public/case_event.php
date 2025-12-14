@@ -61,16 +61,16 @@ $concomitants = $cons->fetchAll(PDO::FETCH_ASSOC);
 $adjStmt = $pdo->prepare("
     SELECT * FROM adjudication
     WHERE case_event_id = ? AND adjudicator_id = ?
-    ORDER BY adjudicated_at DESC
+    ORDER BY submitted_at DESC
     LIMIT 1
 ");
 $adjStmt->execute([$case_event_id, $user['id']]);
 $existingAdj = $adjStmt->fetch(PDO::FETCH_ASSOC);
 
-// If revising, get the suspected concomitants from adjudication_concomitant
+// If revising, get the suspected concomitants from adjudication_drug table
 $suspectedConcomitants = [];
 if ($existingAdj) {
-    $susStmt = $pdo->prepare("SELECT drug_id FROM adjudication_concomitant WHERE adjudication_id = ?");
+    $susStmt = $pdo->prepare("SELECT drug_id FROM adjudication_drug WHERE adjudication_id = ? AND role = 'concomitant'");
     $susStmt->execute([$existingAdj['id']]);
     $suspectedConcomitants = array_column($susStmt->fetchAll(PDO::FETCH_ASSOC), 'drug_id');
 }
