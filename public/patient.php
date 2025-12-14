@@ -599,12 +599,15 @@ async function openEventDetailsModal(eventId) {
     if (data.event.source === 'LAB') {
       // Lab event form
       const evidence = data.evidence[0] || {};
+      // Pre-populate test name with lcat1 if no evidence exists
+      const defaultTestName = evidence.test || data.event.lcat1 || '';
       formHtml = `
         <div class="row">
           <div class="input-field col s12">
             <i class="material-icons prefix">science</i>
-            <input type="text" id="test" value="${escapeHtml(evidence.test || '')}" required>
+            <input type="text" id="test" value="${escapeHtml(defaultTestName)}" required>
             <label for="test" class="active">Test Name *</label>
+            <span class="helper-text">Primary laboratory test name</span>
           </div>
         </div>
         <div class="row">
@@ -640,13 +643,26 @@ async function openEventDetailsModal(eventId) {
             <label for="sample_datetime" class="active">Sample Date/Time</label>
           </div>
         </div>
+
+        <div class="divider" style="margin: 20px 0;"></div>
+
         <div class="row">
           <div class="col s12">
-            <p class="grey-text"><strong>Dictionary Event Info:</strong></p>
-            <p><strong>Category:</strong> ${escapeHtml(data.event.category || '—')}</p>
-            <p><strong>Lab Categories:</strong></p>
-            ${data.event.lcat1 ? `<p style="margin-left: 20px;">• ${escapeHtml(data.event.lcat1)}</p>` : ''}
-            ${data.event.lcat2 ? `<p style="margin-left: 20px;">• ${escapeHtml(data.event.lcat2)}</p>` : ''}
+            <h6 class="grey-text"><i class="material-icons tiny">info</i> Dictionary Event Information</h6>
+            <table class="striped" style="font-size: 0.9em;">
+              <tbody>
+                <tr><td><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
+                <tr><td><strong>Category:</strong></td><td>${escapeHtml(data.event.category || '—')}</td></tr>
+                <tr><td><strong>Source:</strong></td><td>${escapeHtml(data.event.source || '—')}</td></tr>
+                ${data.event.lcat1 ? `<tr><td><strong>Lab Category 1:</strong></td><td>${escapeHtml(data.event.lcat1)}</td></tr>` : ''}
+                ${data.event.lcat1_met1 ? `<tr><td style="padding-left: 20px;"><em>Met Criteria 1:</em></td><td>${escapeHtml(data.event.lcat1_met1)}</td></tr>` : ''}
+                ${data.event.lcat1_met2 ? `<tr><td style="padding-left: 20px;"><em>Met Criteria 2:</em></td><td>${escapeHtml(data.event.lcat1_met2)}</td></tr>` : ''}
+                ${data.event.lcat1_notmet ? `<tr><td style="padding-left: 20px;"><em>Not Met:</em></td><td>${escapeHtml(data.event.lcat1_notmet)}</td></tr>` : ''}
+                ${data.event.lcat2 ? `<tr><td><strong>Lab Category 2:</strong></td><td>${escapeHtml(data.event.lcat2)}</td></tr>` : ''}
+                ${data.event.lcat2_met1 ? `<tr><td style="padding-left: 20px;"><em>Met Criteria:</em></td><td>${escapeHtml(data.event.lcat2_met1)}</td></tr>` : ''}
+                ${data.event.lcat2_notmet ? `<tr><td style="padding-left: 20px;"><em>Not Met:</em></td><td>${escapeHtml(data.event.lcat2_notmet)}</td></tr>` : ''}
+              </tbody>
+            </table>
           </div>
         </div>
       `;
@@ -671,6 +687,7 @@ async function openEventDetailsModal(eventId) {
             <i class="material-icons prefix">badge</i>
             <input type="text" id="encounter_id" value="${escapeHtml(evidence.encounter_id || '')}">
             <label for="encounter_id" class="active">Encounter ID</label>
+            <span class="helper-text">Hospital/clinic encounter or visit identifier from medical records</span>
           </div>
         </div>
         <div class="row">
@@ -680,14 +697,28 @@ async function openEventDetailsModal(eventId) {
             <label for="details" class="active">Details</label>
           </div>
         </div>
+
+        <div class="divider" style="margin: 20px 0;"></div>
+
         <div class="row">
           <div class="col s12">
-            <p class="grey-text"><strong>Dictionary Event Info:</strong></p>
-            <p><strong>CTCAE Term:</strong> ${escapeHtml(data.event.ctcae_term || '—')}</p>
-            <p><strong>Admission Grade:</strong> ${escapeHtml(data.event.admission_grade || '—')}</p>
-            ${data.event.outcome1 ? `<p><strong>Outcome 1:</strong> ${escapeHtml(data.event.outcome1)}</p>` : ''}
-            ${data.event.outcome2 ? `<p><strong>Outcome 2:</strong> ${escapeHtml(data.event.outcome2)}</p>` : ''}
-            ${data.event.outcome3 ? `<p><strong>Outcome 3:</strong> ${escapeHtml(data.event.outcome3)}</p>` : ''}
+            <h6 class="grey-text"><i class="material-icons tiny">info</i> Dictionary Event Information</h6>
+            <table class="striped" style="font-size: 0.9em;">
+              <tbody>
+                <tr><td><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
+                <tr><td><strong>Category:</strong></td><td>${escapeHtml(data.event.category || '—')}</td></tr>
+                <tr><td><strong>Source:</strong></td><td>${escapeHtml(data.event.source || '—')}</td></tr>
+                ${data.event.icd10 ? `<tr><td><strong>ICD-10 Code:</strong></td><td>${escapeHtml(data.event.icd10)}</td></tr>` : ''}
+                ${data.event.ctcae_term ? `<tr><td><strong>CTCAE Term:</strong></td><td>${escapeHtml(data.event.ctcae_term)}</td></tr>` : ''}
+                ${data.event.admission_grade ? `<tr><td><strong>Admission Grade:</strong></td><td>${escapeHtml(data.event.admission_grade)}</td></tr>` : ''}
+                ${data.event.caveat1 ? `<tr><td><strong>Caveat 1:</strong></td><td>${escapeHtml(data.event.caveat1)}</td></tr>` : ''}
+                ${data.event.outcome1 ? `<tr><td style="padding-left: 20px;"><em>Outcome 1:</em></td><td>${escapeHtml(data.event.outcome1)}</td></tr>` : ''}
+                ${data.event.caveat2 ? `<tr><td><strong>Caveat 2:</strong></td><td>${escapeHtml(data.event.caveat2)}</td></tr>` : ''}
+                ${data.event.outcome2 ? `<tr><td style="padding-left: 20px;"><em>Outcome 2:</em></td><td>${escapeHtml(data.event.outcome2)}</td></tr>` : ''}
+                ${data.event.caveat3 ? `<tr><td><strong>Caveat 3:</strong></td><td>${escapeHtml(data.event.caveat3)}</td></tr>` : ''}
+                ${data.event.outcome3 ? `<tr><td style="padding-left: 20px;"><em>Outcome 3:</em></td><td>${escapeHtml(data.event.outcome3)}</td></tr>` : ''}
+              </tbody>
+            </table>
           </div>
         </div>
       `;
