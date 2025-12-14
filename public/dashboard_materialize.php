@@ -442,7 +442,7 @@ async function loadConcomitantsForModal(patientId) {
 
     try {
         // Fetch existing concomitants
-        const res = await fetch(`../api/patient_concomitants.php?patient_id=${patientId}`, {
+        const res = await fetch(`../api/concomitants.php?patient_id=${patientId}`, {
             credentials: 'same-origin',
             headers: { 'Accept': 'application/json' }
         });
@@ -521,8 +521,8 @@ function wireConcomitantModal() {
 
             concomitants.push({
                 drug_id: drugId,
-                start_date: startDateInput.value || null,
-                stop_date: stopDateInput.value || null
+                start_date: startDateInput.value || '',
+                stop_date: stopDateInput.value || ''
             });
         });
 
@@ -530,33 +530,57 @@ function wireConcomitantModal() {
         saveBtn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Saving...';
 
         try {
-            const res = await fetch('../api/patient_concomitants.php', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    patient_id: currentPatientId,
-                    concomitants: concomitants
-                })
+            // The API expects drug_ids array and single start/stop dates
+            // So we need to call it once per unique date combination
+            // Group drugs by their date combinations
+            const groups = new Map();
+
+            concomitants.forEach(c => {
+                const key = `${c.start_date}|${c.stop_date}`;
+                if (!groups.has(key)) {
+                    groups.set(key, {
+                        start_date: c.start_date,
+                        stop_date: c.stop_date,
+                        drug_ids: []
+                    });
+                }
+                groups.get(key).drug_ids.push(c.drug_id);
             });
 
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`HTTP ${res.status}: ${text}`);
+            // Call API for each group
+            let successCount = 0;
+            for (const [key, group] of groups) {
+                const res = await fetch('../api/concomitants.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        patient_id: currentPatientId,
+                        drug_ids: group.drug_ids,
+                        start_date: group.start_date,
+                        stop_date: group.stop_date
+                    })
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(`HTTP ${res.status}: ${text}`);
+                }
+
+                const result = await res.json();
+                if (!result.ok) {
+                    throw new Error(result.error || 'Failed to save');
+                }
+                successCount += result.inserted || 0;
             }
 
-            const result = await res.json();
+            M.toast({ html: `<i class="material-icons left">check_circle</i>Concomitants saved! (${successCount} updated)`, classes: 'green' });
+            M.Modal.getInstance(document.getElementById('concomitant-modal')).close();
+            await loadPatients(); // Refresh patient list
 
-            if (result.ok) {
-                M.toast({ html: '<i class="material-icons left">check_circle</i>Concomitants saved!', classes: 'green' });
-                M.Modal.getInstance(document.getElementById('concomitant-modal')).close();
-                await loadPatients(); // Refresh patient list
-            } else {
-                throw new Error(result.error || 'Failed to save');
-            }
         } catch (err) {
             console.error('Save error:', err);
             M.toast({ html: '<i class="material-icons left">error</i>Failed to save: ' + err.message, classes: 'red' });
