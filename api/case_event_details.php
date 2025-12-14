@@ -66,10 +66,36 @@ try {
       $evidence = $icdStmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Fetch all dictionary events grouped by CTCAE version for categorization
+    $dictEventsStmt = $pdo->prepare("
+      SELECT id, diagnosis, category, source, icd10, ctcae_term, ctcae_code, ctcae_version,
+             admission_grade, active, caveat1, outcome1, caveat2, outcome2, caveat3, outcome3,
+             lcat1, lcat1_met1, lcat1_met2, lcat1_notmet,
+             lcat2, lcat2_met1, lcat2_notmet
+      FROM dictionary_event
+      WHERE active = 1
+      ORDER BY ctcae_version, diagnosis
+    ");
+    $dictEventsStmt->execute();
+    $allDictEvents = $dictEventsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Group by CTCAE version
+    $dictEventsV5 = [];
+    $dictEventsV6 = [];
+    foreach ($allDictEvents as $de) {
+      if ($de['ctcae_version'] === 'v5') {
+        $dictEventsV5[] = $de;
+      } elseif ($de['ctcae_version'] === 'v6') {
+        $dictEventsV6[] = $de;
+      }
+    }
+
     echo json_encode([
       'ok' => true,
       'event' => $event,
-      'evidence' => $evidence
+      'evidence' => $evidence,
+      'dict_events_v5' => $dictEventsV5,
+      'dict_events_v6' => $dictEventsV6
     ]);
     exit;
   }
@@ -127,6 +153,8 @@ try {
           $ref_high = trim($data['ref_high'] ?? '');
           $threshold_met = isset($data['threshold_met']) ? (int)$data['threshold_met'] : null;
           $sample_datetime = trim($data['sample_datetime'] ?? '');
+          $dict_event_v5_id = isset($data['dict_event_v5_id']) && $data['dict_event_v5_id'] > 0 ? (int)$data['dict_event_v5_id'] : null;
+          $dict_event_v6_id = isset($data['dict_event_v6_id']) && $data['dict_event_v6_id'] > 0 ? (int)$data['dict_event_v6_id'] : null;
 
           if (empty($test)) {
             throw new Exception('Test name is required for LAB evidence');
@@ -142,21 +170,21 @@ try {
             $updateStmt = $pdo->prepare("
               UPDATE evidence_lab
               SET test = ?, value = ?, units = ?, ref_low = ?, ref_high = ?,
-                  threshold_met = ?, sample_datetime = ?
+                  threshold_met = ?, sample_datetime = ?, dict_event_v5_id = ?, dict_event_v6_id = ?
               WHERE id = ?
             ");
             $updateStmt->execute([
               $test, $value, $units, $ref_low, $ref_high, $threshold_met,
-              $sample_datetime ?: null, $existing['id']
+              $sample_datetime ?: null, $dict_event_v5_id, $dict_event_v6_id, $existing['id']
             ]);
           } else {
             // Insert new
             $insertStmt = $pdo->prepare("
-              INSERT INTO evidence_lab (case_event_id, test, value, units, ref_low, ref_high, threshold_met, sample_datetime)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              INSERT INTO evidence_lab (case_event_id, dict_event_v5_id, dict_event_v6_id, test, value, units, ref_low, ref_high, threshold_met, sample_datetime)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $insertStmt->execute([
-              $case_event_id, $test, $value, $units, $ref_low, $ref_high, $threshold_met,
+              $case_event_id, $dict_event_v5_id, $dict_event_v6_id, $test, $value, $units, $ref_low, $ref_high, $threshold_met,
               $sample_datetime ?: null
             ]);
           }
@@ -166,6 +194,8 @@ try {
           $event_date = trim($data['event_date'] ?? '');
           $encounter_id = trim($data['encounter_id'] ?? '');
           $details = trim($data['details'] ?? '');
+          $dict_event_v5_id = isset($data['dict_event_v5_id']) && $data['dict_event_v5_id'] > 0 ? (int)$data['dict_event_v5_id'] : null;
+          $dict_event_v6_id = isset($data['dict_event_v6_id']) && $data['dict_event_v6_id'] > 0 ? (int)$data['dict_event_v6_id'] : null;
 
           if (empty($icd_code)) {
             throw new Exception('ICD code is required for ICD evidence');
@@ -180,20 +210,20 @@ try {
             // Update existing
             $updateStmt = $pdo->prepare("
               UPDATE evidence_icd
-              SET icd_code = ?, event_date = ?, encounter_id = ?, details = ?
+              SET icd_code = ?, event_date = ?, encounter_id = ?, details = ?, dict_event_v5_id = ?, dict_event_v6_id = ?
               WHERE id = ?
             ");
             $updateStmt->execute([
-              $icd_code, $event_date ?: null, $encounter_id, $details, $existing['id']
+              $icd_code, $event_date ?: null, $encounter_id, $details, $dict_event_v5_id, $dict_event_v6_id, $existing['id']
             ]);
           } else {
             // Insert new
             $insertStmt = $pdo->prepare("
-              INSERT INTO evidence_icd (case_event_id, icd_code, event_date, encounter_id, details)
-              VALUES (?, ?, ?, ?, ?)
+              INSERT INTO evidence_icd (case_event_id, dict_event_v5_id, dict_event_v6_id, icd_code, event_date, encounter_id, details)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
             $insertStmt->execute([
-              $case_event_id, $icd_code, $event_date ?: null, $encounter_id, $details
+              $case_event_id, $dict_event_v5_id, $dict_event_v6_id, $icd_code, $event_date ?: null, $encounter_id, $details
             ]);
           }
         }
