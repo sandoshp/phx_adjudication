@@ -651,16 +651,24 @@ async function openEventDetailsModal(eventId) {
             <h6 class="grey-text"><i class="material-icons tiny">info</i> Dictionary Event Information</h6>
             <table class="striped" style="font-size: 0.9em;">
               <tbody>
-                <tr><td><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
+                <tr><td style="width: 200px;"><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
                 <tr><td><strong>Category:</strong></td><td>${escapeHtml(data.event.category || '—')}</td></tr>
-                <tr><td><strong>Source:</strong></td><td>${escapeHtml(data.event.source || '—')}</td></tr>
-                ${data.event.lcat1 ? `<tr><td><strong>Lab Category 1:</strong></td><td>${escapeHtml(data.event.lcat1)}</td></tr>` : ''}
-                ${data.event.lcat1_met1 ? `<tr><td style="padding-left: 20px;"><em>Met Criteria 1:</em></td><td>${escapeHtml(data.event.lcat1_met1)}</td></tr>` : ''}
-                ${data.event.lcat1_met2 ? `<tr><td style="padding-left: 20px;"><em>Met Criteria 2:</em></td><td>${escapeHtml(data.event.lcat1_met2)}</td></tr>` : ''}
-                ${data.event.lcat1_notmet ? `<tr><td style="padding-left: 20px;"><em>Not Met:</em></td><td>${escapeHtml(data.event.lcat1_notmet)}</td></tr>` : ''}
-                ${data.event.lcat2 ? `<tr><td><strong>Lab Category 2:</strong></td><td>${escapeHtml(data.event.lcat2)}</td></tr>` : ''}
-                ${data.event.lcat2_met1 ? `<tr><td style="padding-left: 20px;"><em>Met Criteria:</em></td><td>${escapeHtml(data.event.lcat2_met1)}</td></tr>` : ''}
-                ${data.event.lcat2_notmet ? `<tr><td style="padding-left: 20px;"><em>Not Met:</em></td><td>${escapeHtml(data.event.lcat2_notmet)}</td></tr>` : ''}
+                <tr><td><strong>Source:</strong></td><td><span class="chip ${data.event.source === 'LAB' ? 'blue' : 'purple'} white-text">${escapeHtml(data.event.source || '—')}</span></td></tr>
+                ${data.event.active !== undefined ? `<tr><td><strong>Active:</strong></td><td>${data.event.active ? '<span class="green-text">✓ Yes</span>' : '<span class="red-text">✗ No</span>'}</td></tr>` : ''}
+
+                ${data.event.ctcae_term || data.event.ctcae_code || data.event.ctcae_version ? `<tr><td colspan="2" style="background: #e3f2fd; padding: 8px; margin-top: 8px;"><strong>CTCAE Information</strong></td></tr>` : ''}
+                ${data.event.ctcae_term ? `<tr><td style="padding-left: 20px;">CTCAE Term:</td><td>${escapeHtml(data.event.ctcae_term)}</td></tr>` : ''}
+                ${data.event.ctcae_code ? `<tr><td style="padding-left: 20px;">CTCAE Code:</td><td>${escapeHtml(data.event.ctcae_code)}</td></tr>` : ''}
+                ${data.event.ctcae_version ? `<tr><td style="padding-left: 20px;">CTCAE Version:</td><td>${escapeHtml(data.event.ctcae_version)}</td></tr>` : ''}
+
+                ${data.event.lcat1 ? `<tr><td colspan="2" style="background: #e8f5e9; padding: 8px; margin-top: 8px;"><strong>Lab Category 1:</strong> ${escapeHtml(data.event.lcat1)}</td></tr>` : ''}
+                ${data.event.lcat1_met1 ? `<tr><td style="padding-left: 20px;">Met Criteria 1:</td><td>${escapeHtml(data.event.lcat1_met1)}</td></tr>` : ''}
+                ${data.event.lcat1_met2 ? `<tr><td style="padding-left: 20px;">Met Criteria 2:</td><td>${escapeHtml(data.event.lcat1_met2)}</td></tr>` : ''}
+                ${data.event.lcat1_notmet ? `<tr><td style="padding-left: 20px;">Not Met:</td><td>${escapeHtml(data.event.lcat1_notmet)}</td></tr>` : ''}
+
+                ${data.event.lcat2 ? `<tr><td colspan="2" style="background: #e8f5e9; padding: 8px; margin-top: 8px;"><strong>Lab Category 2:</strong> ${escapeHtml(data.event.lcat2)}</td></tr>` : ''}
+                ${data.event.lcat2_met1 ? `<tr><td style="padding-left: 20px;">Met Criteria:</td><td>${escapeHtml(data.event.lcat2_met1)}</td></tr>` : ''}
+                ${data.event.lcat2_notmet ? `<tr><td style="padding-left: 20px;">Not Met:</td><td>${escapeHtml(data.event.lcat2_notmet)}</td></tr>` : ''}
               </tbody>
             </table>
           </div>
@@ -705,18 +713,29 @@ async function openEventDetailsModal(eventId) {
             <h6 class="grey-text"><i class="material-icons tiny">info</i> Dictionary Event Information</h6>
             <table class="striped" style="font-size: 0.9em;">
               <tbody>
-                <tr><td><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
+                <tr><td style="width: 200px;"><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
                 <tr><td><strong>Category:</strong></td><td>${escapeHtml(data.event.category || '—')}</td></tr>
-                <tr><td><strong>Source:</strong></td><td>${escapeHtml(data.event.source || '—')}</td></tr>
-                ${data.event.icd10 ? `<tr><td><strong>ICD-10 Code:</strong></td><td>${escapeHtml(data.event.icd10)}</td></tr>` : ''}
-                ${data.event.ctcae_term ? `<tr><td><strong>CTCAE Term:</strong></td><td>${escapeHtml(data.event.ctcae_term)}</td></tr>` : ''}
+                <tr><td><strong>Source:</strong></td><td><span class="chip ${data.event.source === 'LAB' ? 'blue' : 'purple'} white-text">${escapeHtml(data.event.source || '—')}</span></td></tr>
+                ${data.event.active !== undefined ? `<tr><td><strong>Active:</strong></td><td>${data.event.active ? '<span class="green-text">✓ Yes</span>' : '<span class="red-text">✗ No</span>'}</td></tr>` : ''}
+                ${data.event.icd10 ? `<tr><td><strong>ICD-10 Code:</strong></td><td><code>${escapeHtml(data.event.icd10)}</code></td></tr>` : ''}
                 ${data.event.admission_grade ? `<tr><td><strong>Admission Grade:</strong></td><td>${escapeHtml(data.event.admission_grade)}</td></tr>` : ''}
-                ${data.event.caveat1 ? `<tr><td><strong>Caveat 1:</strong></td><td>${escapeHtml(data.event.caveat1)}</td></tr>` : ''}
-                ${data.event.outcome1 ? `<tr><td style="padding-left: 20px;"><em>Outcome 1:</em></td><td>${escapeHtml(data.event.outcome1)}</td></tr>` : ''}
-                ${data.event.caveat2 ? `<tr><td><strong>Caveat 2:</strong></td><td>${escapeHtml(data.event.caveat2)}</td></tr>` : ''}
-                ${data.event.outcome2 ? `<tr><td style="padding-left: 20px;"><em>Outcome 2:</em></td><td>${escapeHtml(data.event.outcome2)}</td></tr>` : ''}
-                ${data.event.caveat3 ? `<tr><td><strong>Caveat 3:</strong></td><td>${escapeHtml(data.event.caveat3)}</td></tr>` : ''}
-                ${data.event.outcome3 ? `<tr><td style="padding-left: 20px;"><em>Outcome 3:</em></td><td>${escapeHtml(data.event.outcome3)}</td></tr>` : ''}
+
+                ${data.event.ctcae_term || data.event.ctcae_code || data.event.ctcae_version ? `<tr><td colspan="2" style="background: #e3f2fd; padding: 8px; margin-top: 8px;"><strong>CTCAE Information</strong></td></tr>` : ''}
+                ${data.event.ctcae_term ? `<tr><td style="padding-left: 20px;">CTCAE Term:</td><td>${escapeHtml(data.event.ctcae_term)}</td></tr>` : ''}
+                ${data.event.ctcae_code ? `<tr><td style="padding-left: 20px;">CTCAE Code:</td><td>${escapeHtml(data.event.ctcae_code)}</td></tr>` : ''}
+                ${data.event.ctcae_version ? `<tr><td style="padding-left: 20px;">CTCAE Version:</td><td>${escapeHtml(data.event.ctcae_version)}</td></tr>` : ''}
+
+                ${data.event.caveat1 || data.event.outcome1 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 8px; margin-top: 8px;"><strong>Caveat 1</strong></td></tr>` : ''}
+                ${data.event.caveat1 ? `<tr><td style="padding-left: 20px;">Caveat:</td><td>${escapeHtml(data.event.caveat1)}</td></tr>` : ''}
+                ${data.event.outcome1 ? `<tr><td style="padding-left: 20px;">Outcome:</td><td>${escapeHtml(data.event.outcome1)}</td></tr>` : ''}
+
+                ${data.event.caveat2 || data.event.outcome2 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 8px; margin-top: 8px;"><strong>Caveat 2</strong></td></tr>` : ''}
+                ${data.event.caveat2 ? `<tr><td style="padding-left: 20px;">Caveat:</td><td>${escapeHtml(data.event.caveat2)}</td></tr>` : ''}
+                ${data.event.outcome2 ? `<tr><td style="padding-left: 20px;">Outcome:</td><td>${escapeHtml(data.event.outcome2)}</td></tr>` : ''}
+
+                ${data.event.caveat3 || data.event.outcome3 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 8px; margin-top: 8px;"><strong>Caveat 3</strong></td></tr>` : ''}
+                ${data.event.caveat3 ? `<tr><td style="padding-left: 20px;">Caveat:</td><td>${escapeHtml(data.event.caveat3)}</td></tr>` : ''}
+                ${data.event.outcome3 ? `<tr><td style="padding-left: 20px;">Outcome:</td><td>${escapeHtml(data.event.outcome3)}</td></tr>` : ''}
               </tbody>
             </table>
           </div>
