@@ -1,12 +1,21 @@
 <?php
 /**
- * PHOENIX Adjudication - Case Event Adjudication (Materialize CSS)
+ * PHOENIX Adjudication - Case Event Adjudication
  */
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/db.php';
 require_login();
 
-/* Redirect ?case_event_id=... to the expected ?id=... to avoid "Case event not found" on accidental GET */
+$user = current_user();
+
+// Check permissions - allow adjudicators, reviewers, coordinators, chairs, and admins
+if (!in_array($user['role'], ['admin', 'coordinator', 'chair', 'adjudicator', 'reviewer'])) {
+    http_response_code(403);
+    echo "You do not have permission to adjudicate cases.";
+    exit;
+}
+
+/* Redirect ?case_event_id=... to the expected ?id=... */
 if (isset($_GET['case_event_id']) && !isset($_GET['id'])) {
   $cid = (int)$_GET['case_event_id'];
   header("Location: case_event.php?id={$cid}", true, 302);
@@ -51,14 +60,14 @@ $concomitants = $cons->fetchAll(PDO::FETCH_ASSOC);
 $show = fn($v) => isset($v) && trim((string)$v) !== '' && trim((string)$v) !== '-';
 
 $pageTitle = 'Adjudicate: ' . htmlspecialchars($ev['diagnosis']);
-require_once __DIR__ . '/../inc/templates/header_fixed.php';
+require_once __DIR__ . '/../inc/templates/header_light.php';
 ?>
 
 <!-- Success Message -->
 <?php if (!empty($_GET['saved'])): ?>
 <div class="row">
     <div class="col s12">
-        <div class="card-panel green darken-1 white-text">
+        <div class="card-panel green white-text">
             <i class="material-icons left">check_circle</i>
             Adjudication saved successfully.
         </div>
@@ -69,12 +78,12 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
 <!-- Page Header -->
 <div class="row">
     <div class="col s12">
-        <h4 class="blue-grey-text text-lighten-2">
+        <h4>
             <i class="material-icons left">gavel</i>
             Adjudicate Event
         </h4>
-        <p class="grey-text">Patient: <?= htmlspecialchars($ev['patient_code']) ?></p>
-        <a href="patient.php?id=<?= (int)$ev['patient_id'] ?>" class="btn-small blue waves-effect waves-light">
+        <p><strong>Patient:</strong> <?= htmlspecialchars($ev['patient_code']) ?></p>
+        <a href="patient.php?id=<?= (int)$ev['patient_id'] ?>" class="btn-small waves-effect waves-light">
             <i class="material-icons left">arrow_back</i>
             Back to Patient
         </a>
@@ -87,7 +96,7 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
         <div class="card">
             <div class="card-content">
                 <span class="card-title">
-                    <i class="material-icons left orange-text">assignment</i>
+                    <i class="material-icons left">assignment</i>
                     Event Information
                 </span>
 
@@ -97,14 +106,14 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
                             <td style="width: 200px;"><strong>Phenotype</strong></td>
                             <td>
                                 <?= htmlspecialchars($ev['diagnosis']) ?>
-                                <span class="chip grey lighten-2"><?= htmlspecialchars($ev['category']) ?></span>
+                                <span class="chip"><?= htmlspecialchars($ev['category']) ?></span>
                             </td>
                         </tr>
                         <tr>
                             <td><strong>Source</strong></td>
                             <td>
                                 <?= htmlspecialchars($ev['source']) ?>
-                                <?= $ev['icd10'] ? '<span class="chip grey lighten-2">' . htmlspecialchars($ev['icd10']) . '</span>' : '' ?>
+                                <?= $ev['icd10'] ? '<span class="chip">' . htmlspecialchars($ev['icd10']) . '</span>' : '' ?>
                             </td>
                         </tr>
                         <tr>
@@ -118,7 +127,7 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
                                     }
                                     if ($concomitants) {
                                         foreach ($concomitants as $c) {
-                                            $parts[] = '<span class="chip grey lighten-1"><i class="material-icons tiny">medication</i> ' . htmlspecialchars($c['name']) . '</span>';
+                                            $parts[] = '<span class="chip grey white-text"><i class="material-icons tiny">medication</i> ' . htmlspecialchars($c['name']) . '</span>';
                                         }
                                     }
                                     echo $parts ? implode(' ', $parts) : '<span class="grey-text">None</span>';
@@ -127,54 +136,87 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <?php
-                    $val = function ($v) { $s = trim((string)($v ?? '')); return $s === '' || $s === '-' ? '-' : $s; };
-                    $hasNotes = $show($ev['caveat1']) || $show($ev['caveat2']) || $show($ev['caveat3']) ||
-                                $show($ev['outcome1']) || $show($ev['outcome2']) || $show($ev['outcome3']) ||
-                                $show($ev['lcat1']) || $show($ev['lcat2']);
-                ?>
+<!-- Evidence Section - Dictionary Event Data -->
+<?php
+$val = function ($v) { $s = trim((string)($v ?? '')); return $s === '' || $s === '-' ? null : $s; };
+$hasEvidence = $show($ev['outcome1']) || $show($ev['outcome2']) || $show($ev['outcome3']) ||
+               $show($ev['caveat1']) || $show($ev['caveat2']) || $show($ev['caveat3']) ||
+               $show($ev['lcat1']) || $show($ev['lcat2']);
+?>
 
-                <?php if ($hasNotes): ?>
+<?php if ($hasEvidence): ?>
+<div class="row">
+    <div class="col s12">
+        <div class="card blue lighten-5">
+            <div class="card-content">
+                <span class="card-title">
+                    <i class="material-icons left blue-text">info</i>
+                    Evidence & Dictionary Guidance
+                </span>
+                <p class="grey-text">Review this information to guide your adjudication decision</p>
+
+                <?php if ($show($ev['outcome1']) || $show($ev['outcome2']) || $show($ev['outcome3'])): ?>
                 <div style="margin-top: 20px;">
-                    <ul class="collapsible">
-                        <li>
-                            <div class="collapsible-header">
-                                <i class="material-icons">info_outline</i>
-                                Dictionary Notes
-                            </div>
-                            <div class="collapsible-body">
-                                <?php if ($show($ev['caveat1']) || $show($ev['outcome1'])): ?>
-                                    <p><strong>Caveat 1:</strong> <?= htmlspecialchars($val($ev['caveat1'])) ?></p>
-                                    <p><strong>Outcome 1:</strong> <?= htmlspecialchars($val($ev['outcome1'])) ?></p>
-                                <?php endif; ?>
-                                <?php if ($show($ev['caveat2']) || $show($ev['outcome2'])): ?>
-                                    <p><strong>Caveat 2:</strong> <?= htmlspecialchars($val($ev['caveat2'])) ?></p>
-                                    <p><strong>Outcome 2:</strong> <?= htmlspecialchars($val($ev['outcome2'])) ?></p>
-                                <?php endif; ?>
-                                <?php if ($show($ev['caveat3']) || $show($ev['outcome3'])): ?>
-                                    <p><strong>Caveat 3:</strong> <?= htmlspecialchars($val($ev['caveat3'])) ?></p>
-                                    <p><strong>Outcome 3:</strong> <?= htmlspecialchars($val($ev['outcome3'])) ?></p>
-                                <?php endif; ?>
+                    <h6><strong>Outcomes:</strong></h6>
+                    <?php if ($show($ev['outcome1'])): ?>
+                        <p><strong>Outcome 1:</strong> <?= htmlspecialchars($val($ev['outcome1'])) ?></p>
+                    <?php endif; ?>
+                    <?php if ($show($ev['outcome2'])): ?>
+                        <p><strong>Outcome 2:</strong> <?= htmlspecialchars($val($ev['outcome2'])) ?></p>
+                    <?php endif; ?>
+                    <?php if ($show($ev['outcome3'])): ?>
+                        <p><strong>Outcome 3:</strong> <?= htmlspecialchars($val($ev['outcome3'])) ?></p>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
 
-                                <?php if ($show($ev['lcat1'])): ?>
-                                    <p><strong>LCAT 1:</strong> <?= htmlspecialchars($val($ev['lcat1'])) ?></p>
-                                    <ul>
-                                        <li>Met 1: <?= htmlspecialchars($val($ev['lcat1_met1'])) ?></li>
-                                        <li>Met 2: <?= htmlspecialchars($val($ev['lcat1_met2'])) ?></li>
-                                        <li>Not Met: <?= htmlspecialchars($val($ev['lcat1_notmet'])) ?></li>
-                                    </ul>
-                                <?php endif; ?>
+                <?php if ($show($ev['caveat1']) || $show($ev['caveat2']) || $show($ev['caveat3'])): ?>
+                <div style="margin-top: 20px;">
+                    <h6><strong>Caveats:</strong></h6>
+                    <?php if ($show($ev['caveat1'])): ?>
+                        <p><strong>Caveat 1:</strong> <?= htmlspecialchars($val($ev['caveat1'])) ?></p>
+                    <?php endif; ?>
+                    <?php if ($show($ev['caveat2'])): ?>
+                        <p><strong>Caveat 2:</strong> <?= htmlspecialchars($val($ev['caveat2'])) ?></p>
+                    <?php endif; ?>
+                    <?php if ($show($ev['caveat3'])): ?>
+                        <p><strong>Caveat 3:</strong> <?= htmlspecialchars($val($ev['caveat3'])) ?></p>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
 
-                                <?php if ($show($ev['lcat2'])): ?>
-                                    <p><strong>LCAT 2:</strong> <?= htmlspecialchars($val($ev['lcat2'])) ?></p>
-                                    <ul>
-                                        <li>Met 1: <?= htmlspecialchars($val($ev['lcat2_met1'])) ?></li>
-                                        <li>Not Met: <?= htmlspecialchars($val($ev['lcat2_notmet'])) ?></li>
-                                    </ul>
-                                <?php endif; ?>
-                            </div>
-                        </li>
+                <?php if ($show($ev['lcat1'])): ?>
+                <div style="margin-top: 20px;">
+                    <h6><strong>LCAT 1:</strong> <?= htmlspecialchars($val($ev['lcat1'])) ?></h6>
+                    <ul>
+                        <?php if ($show($ev['lcat1_met1'])): ?>
+                            <li><strong>Met 1:</strong> <?= htmlspecialchars($val($ev['lcat1_met1'])) ?></li>
+                        <?php endif; ?>
+                        <?php if ($show($ev['lcat1_met2'])): ?>
+                            <li><strong>Met 2:</strong> <?= htmlspecialchars($val($ev['lcat1_met2'])) ?></li>
+                        <?php endif; ?>
+                        <?php if ($show($ev['lcat1_notmet'])): ?>
+                            <li><strong>Not Met:</strong> <?= htmlspecialchars($val($ev['lcat1_notmet'])) ?></li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($show($ev['lcat2'])): ?>
+                <div style="margin-top: 20px;">
+                    <h6><strong>LCAT 2:</strong> <?= htmlspecialchars($val($ev['lcat2'])) ?></h6>
+                    <ul>
+                        <?php if ($show($ev['lcat2_met1'])): ?>
+                            <li><strong>Met 1:</strong> <?= htmlspecialchars($val($ev['lcat2_met1'])) ?></li>
+                        <?php endif; ?>
+                        <?php if ($show($ev['lcat2_notmet'])): ?>
+                            <li><strong>Not Met:</strong> <?= htmlspecialchars($val($ev['lcat2_notmet'])) ?></li>
+                        <?php endif; ?>
                     </ul>
                 </div>
                 <?php endif; ?>
@@ -182,6 +224,7 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Adjudication Form Card -->
 <div class="row">
@@ -189,78 +232,76 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
         <div class="card">
             <div class="card-content">
                 <span class="card-title">
-                    <i class="material-icons left green-text">fact_check</i>
-                    Adjudication Wizard
+                    <i class="material-icons left">fact_check</i>
+                    Adjudication Form
                 </span>
-                <div id="save-status"></div>
 
-                <form id="adj-form" method="post" action="../api/adjudications.php" novalidate>
+                <form id="adj-form" method="post" action="../api/adjudications.php">
                     <input type="hidden" name="case_event_id" value="<?= (int)$case_event_id ?>">
 
                     <!-- Framework Selection -->
                     <div class="row">
                         <div class="input-field col s12 m6">
                             <select name="framework" id="framework">
-                                <option value="WHO-UMC">WHO-UMC</option>
+                                <option value="WHO-UMC" selected>WHO-UMC</option>
                                 <option value="Naranjo">Naranjo</option>
                             </select>
                             <label>Framework</label>
                         </div>
                     </div>
 
-                    <!-- Framework Questions (will be populated by JS) -->
+                    <!-- Framework Questions (will be populated by JS if needed) -->
                     <div id="framework-questions"></div>
 
-                    <!-- Severity -->
+                    <!-- Severity, Expectedness, Attribution -->
                     <div class="row">
                         <div class="input-field col s12 m6 l4">
-                            <select name="severity">
+                            <select name="severity" required>
+                                <option value="" disabled selected>Choose severity</option>
                                 <option value="Mild">Mild</option>
                                 <option value="Moderate">Moderate</option>
                                 <option value="Severe">Severe</option>
                             </select>
-                            <label>Severity</label>
+                            <label>Severity *</label>
                         </div>
 
-                        <!-- Expectedness -->
                         <div class="input-field col s12 m6 l4">
-                            <select name="expectedness">
+                            <select name="expectedness" required>
+                                <option value="" disabled selected>Choose expectedness</option>
                                 <option value="Expected">Expected</option>
                                 <option value="Unexpected">Unexpected</option>
                                 <option value="Not_Assessable">Not Assessable</option>
                             </select>
-                            <label>Expectedness</label>
+                            <label>Expectedness *</label>
                         </div>
 
-                        <!-- Attribution to Index Drug -->
                         <div class="input-field col s12 l4">
-                            <select name="index_attribution">
+                            <select name="index_attribution" required>
+                                <option value="" disabled selected>Choose attribution</option>
                                 <option value="Yes">Yes</option>
                                 <option value="No">No</option>
                                 <option value="Indeterminate">Indeterminate</option>
                             </select>
-                            <label>Attribution to Index Drug</label>
+                            <label>Attribution to Index Drug *</label>
                         </div>
                     </div>
 
                     <!-- Suspected Concomitants -->
+                    <?php if ($concomitants): ?>
                     <div class="row">
                         <div class="col s12">
-                            <p><strong>Suspected Concomitants (relevant only)</strong></p>
-                            <?php if (!$concomitants): ?>
-                                <p class="grey-text"><em>None</em></p>
-                            <?php else: ?>
-                                <?php foreach($concomitants as $c): ?>
-                                    <p>
-                                        <label>
-                                            <input type="checkbox" name="suspected_concomitants[]" value="<?= (int)$c['id'] ?>" checked />
-                                            <span><?= htmlspecialchars($c['name']) ?></span>
-                                        </label>
-                                    </p>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                            <p><strong>Suspected Concomitants</strong></p>
+                            <?php foreach($concomitants as $c): ?>
+                                <p>
+                                    <label>
+                                        <input type="checkbox" name="suspected_concomitants[]" value="<?= (int)$c['id'] ?>" checked />
+                                        <span><?= htmlspecialchars($c['name']) ?></span>
+                                    </label>
+                                </p>
+                            <?php endforeach; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
 
                     <!-- Rationale -->
                     <div class="row">
@@ -275,59 +316,32 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
                     <div class="row">
                         <div class="col s12">
                             <p><strong>Missing Information</strong></p>
-                            <p>
-                                <label>
-                                    <input type="checkbox" name="missing_info[]" value="Timing" />
-                                    <span>Timing of exposure/onset</span>
-                                </label>
-                            </p>
-                            <p>
-                                <label>
-                                    <input type="checkbox" name="missing_info[]" value="Dechallenge/Rechallenge" />
-                                    <span>Dechallenge/Rechallenge</span>
-                                </label>
-                            </p>
-                            <p>
-                                <label>
-                                    <input type="checkbox" name="missing_info[]" value="Labs" />
-                                    <span>Relevant labs</span>
-                                </label>
-                            </p>
-                            <p>
-                                <label>
-                                    <input type="checkbox" name="missing_info[]" value="Alternative causes" />
-                                    <span>Alternative causes</span>
-                                </label>
-                            </p>
+                            <p><label><input type="checkbox" name="missing_info[]" value="Timing" /><span>Timing of exposure/onset</span></label></p>
+                            <p><label><input type="checkbox" name="missing_info[]" value="Dechallenge/Rechallenge" /><span>Dechallenge/Rechallenge</span></label></p>
+                            <p><label><input type="checkbox" name="missing_info[]" value="Labs" /><span>Relevant labs</span></label></p>
+                            <p><label><input type="checkbox" name="missing_info[]" value="Alternative causes" /><span>Alternative causes</span></label></p>
                         </div>
                     </div>
 
-                    <!-- Auto-score and Causality -->
+                    <!-- Causality -->
                     <div class="row">
-                        <div class="col s12 m6">
-                            <button type="button" id="calc-score" class="btn waves-effect waves-light orange">
-                                <i class="material-icons left">calculate</i>
-                                Auto-score
-                            </button>
-                            <span id="auto-score" style="margin-left: 15px; font-weight: bold;"></span>
-                        </div>
-
                         <div class="input-field col s12 m6">
-                            <select name="causality" id="causality">
+                            <select name="causality" id="causality" required>
+                                <option value="" disabled selected>Choose causality</option>
                                 <option value="Definite">Definite</option>
                                 <option value="Probable">Probable</option>
                                 <option value="Possible">Possible</option>
                                 <option value="Unrelated">Unrelated</option>
                                 <option value="Unable">Unable</option>
                             </select>
-                            <label>Causality Class</label>
+                            <label>Causality Class *</label>
                         </div>
                     </div>
 
                     <!-- Submit Button -->
                     <div class="row">
                         <div class="col s12">
-                            <button type="submit" class="btn-large waves-effect waves-light blue">
+                            <button type="submit" class="btn-large waves-effect waves-light">
                                 <i class="material-icons left">send</i>
                                 Submit Adjudication
                             </button>
@@ -344,8 +358,8 @@ require_once __DIR__ . '/../inc/templates/header_fixed.php';
 document.addEventListener('DOMContentLoaded', function() {
     M.FormSelect.init(document.querySelectorAll('select'));
     M.CharacterCounter.init(document.querySelectorAll('textarea[data-length]'));
-    M.Collapsible.init(document.querySelectorAll('.collapsible'));
+    M.updateTextFields();
 });
 </script>
 
-<?php require_once __DIR__ . '/../inc/templates/footer_fixed.php'; ?>
+<?php require_once __DIR__ . '/../inc/templates/footer_light.php'; ?>
