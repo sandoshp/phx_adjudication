@@ -25,12 +25,16 @@ try {
       exit;
     }
 
-    // Get case event with dictionary_event details
+    // Get case event with dictionary_event details (all fields)
     $stmt = $pdo->prepare("
-      SELECT ce.*, de.diagnosis, de.category, de.source, de.icd10, de.ctcae_term,
-             de.admission_grade, de.caveat1, de.outcome1, de.caveat2, de.outcome2,
-             de.caveat3, de.outcome3, de.lcat1, de.lcat1_met1, de.lcat1_met2,
-             de.lcat1_notmet, de.lcat2, de.lcat2_met1, de.lcat2_notmet,
+      SELECT ce.*,
+             de.diagnosis, de.category, de.source, de.icd10,
+             de.ctcae_term, de.ctcae_code, de.ctcae_version,
+             de.admission_grade, de.active,
+             de.caveat1, de.outcome1, de.caveat2, de.outcome2,
+             de.caveat3, de.outcome3,
+             de.lcat1, de.lcat1_met1, de.lcat1_met2, de.lcat1_notmet,
+             de.lcat2, de.lcat2_met1, de.lcat2_notmet,
              p.patient_code
       FROM case_event ce
       JOIN dictionary_event de ON de.id = ce.dict_event_id
