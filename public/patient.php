@@ -180,6 +180,28 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
     </div>
 </div>
 
+<!-- Event Details Modal -->
+<div id="event-details-modal" class="modal modal-fixed-footer">
+    <div class="modal-content">
+        <h4>
+            <i class="material-icons left">edit</i>
+            Update Event Details — <span id="modal-event-diagnosis"></span>
+        </h4>
+        <p>Patient: <strong><?= htmlspecialchars($p['patient_code']) ?></strong></p>
+
+        <div id="event-details-form">
+            <p class="center-align grey-text">Loading...</p>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn-flat" onclick="M.Modal.getInstance(document.getElementById('event-details-modal')).close()">Cancel</button>
+        <button id="save-event-details" class="btn blue" onclick="saveEventDetails()">
+            <i class="material-icons left">save</i>
+            Save Details
+        </button>
+    </div>
+</div>
+
 <!-- Table Utilities Script -->
 <script src="assets/js/table-utils.js"></script>
 
@@ -307,10 +329,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <th>Outcome</th>
             <th>Category</th>
             <th>Source</th>
-            <th class="center-align">Mark Absent</th>
+            <th class="center-align">Event Management</th>
             <th>Status</th>
             <th class="center-align">Adjudications</th>
-            <th class="center-align">Actions</th>
+            <th class="center-align">Adjudication Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -322,10 +344,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = ev.status || 'open';
         const adjCount = parseInt(ev.adjudications_count) || 0;
         const eventId = ev.id;
+        const isAbsent = ev.is_absent === 1 || ev.is_absent === '1';
 
-        // Determine action links based on adjudication count
+        // Event management column (Mark Absent / Update Details)
+        let eventMgmtHtml = '';
+        if (isAbsent) {
+          eventMgmtHtml = `
+            <span class="chip red white-text" style="margin-bottom: 4px; display: block;">Absent</span>
+            <a href="#event-details-modal" class="btn-small waves-effect waves-light blue modal-trigger"
+               onclick="openEventDetailsModal(${eventId}); return false;"
+               style="font-size: 10px; padding: 0 8px;">
+              <i class="material-icons tiny">edit</i> Details
+            </a>
+          `;
+        } else {
+          eventMgmtHtml = `
+            <a href="#" class="btn-small waves-effect waves-light red"
+               onclick="markAbsent(${eventId}); return false;"
+               style="margin-bottom: 4px; display: block; font-size: 10px; padding: 0 8px;">
+              <i class="material-icons tiny">cancel</i> Mark Absent
+            </a>
+            <a href="#event-details-modal" class="btn-small waves-effect waves-light blue modal-trigger"
+               onclick="openEventDetailsModal(${eventId}); return false;"
+               style="font-size: 10px; padding: 0 8px;">
+              <i class="material-icons tiny">edit</i> Update Details
+            </a>
+          `;
+        }
+
+        // Determine adjudication action links based on adjudication count and absent status
         let actionHtml = '';
-        if (adjCount >= 2) {
+        if (isAbsent) {
+          // Hide adjudication links if event is marked absent
+          actionHtml = '<span class="grey-text">—</span>';
+        } else if (adjCount >= 2) {
           // Show Consensus link when there are 2+ adjudications
           actionHtml = `
             <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light blue">Revise</a>
@@ -358,9 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${escapeHtml(ev.category || '—')}</td>
           <td>${escapeHtml(ev.source || '—')}</td>
           <td class="center-align">
-            <a href="#" class="btn-small waves-effect waves-light red" onclick="markAbsent(${eventId}); return false;">
-              <i class="material-icons tiny">cancel</i>
-            </a>
+            ${eventMgmtHtml}
           </td>
           <td>${statusBadge}</td>
           <td class="center-align"><span class="badge blue white-text">${adjCount}</span></td>
@@ -422,21 +472,260 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Initialize modal
+  const modalElem = document.getElementById('event-details-modal');
+  M.Modal.init(modalElem, {});
+
   refreshEvents();
 });
 
-// Mark event as absent
-function markAbsent(eventId) {
-  if (!confirm('Mark this event as absent for this patient?')) return;
+// Global variables for modal state
+let currentEventId = null;
+let currentEventData = null;
 
-  // TODO: Implement mark absent functionality
-  // This would call an API endpoint to mark the event as absent
-  showToast('Mark absent functionality to be implemented', 'info');
+// Mark event as absent
+async function markAbsent(eventId) {
+  if (!confirm('Mark this event as absent for this patient?\n\nThis will hide adjudication actions for this event.')) return;
+
+  try {
+    const res = await fetch('../api/case_event_details.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'mark_absent',
+        case_event_id: eventId,
+        is_absent: 1
+      })
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+
+    const result = await res.json();
+    if (!result.ok) {
+      throw new Error(result.error || 'Failed to mark absent');
+    }
+
+    showToast('Event marked as absent', 'success');
+    await refreshEvents(); // Reload the events table
+  } catch (err) {
+    console.error('Mark absent error:', err);
+    showToast('Failed to mark absent: ' + err.message, 'error');
+  }
+}
+
+async function openEventDetailsModal(eventId) {
+  currentEventId = eventId;
+  const modal = M.Modal.getInstance(document.getElementById('event-details-modal'));
+  const formContainer = document.getElementById('event-details-form');
+
+  formContainer.innerHTML = '<div class="progress"><div class="indeterminate blue"></div></div><p class="center-align grey-text">Loading event details...</p>';
+
+  try {
+    const res = await fetch(`../api/case_event_details.php?case_event_id=${eventId}`, {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+
+    const data = await res.json();
+    if (!data.ok) {
+      throw new Error(data.error || 'Failed to load details');
+    }
+
+    currentEventData = data;
+
+    // Update modal title
+    document.getElementById('modal-event-diagnosis').textContent = data.event.diagnosis || 'Unknown Event';
+
+    // Build form based on source type
+    let formHtml = '';
+
+    if (data.event.source === 'LAB') {
+      // Lab event form
+      const evidence = data.evidence[0] || {};
+      formHtml = `
+        <div class="row">
+          <div class="input-field col s12">
+            <i class="material-icons prefix">science</i>
+            <input type="text" id="test" value="${escapeHtml(evidence.test || '')}" required>
+            <label for="test" class="active">Test Name *</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m4">
+            <i class="material-icons prefix">trending_up</i>
+            <input type="text" id="value" value="${escapeHtml(evidence.value || '')}">
+            <label for="value" class="active">Value</label>
+          </div>
+          <div class="input-field col s12 m4">
+            <input type="text" id="units" value="${escapeHtml(evidence.units || '')}">
+            <label for="units" class="active">Units</label>
+          </div>
+          <div class="input-field col s12 m4">
+            <label>
+              <input type="checkbox" id="threshold_met" ${evidence.threshold_met ? 'checked' : ''} />
+              <span>Threshold Met</span>
+            </label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12 m4">
+            <i class="material-icons prefix">show_chart</i>
+            <input type="text" id="ref_low" value="${escapeHtml(evidence.ref_low || '')}">
+            <label for="ref_low" class="active">Reference Low</label>
+          </div>
+          <div class="input-field col s12 m4">
+            <input type="text" id="ref_high" value="${escapeHtml(evidence.ref_high || '')}">
+            <label for="ref_high" class="active">Reference High</label>
+          </div>
+          <div class="input-field col s12 m4">
+            <i class="material-icons prefix">event</i>
+            <input type="datetime-local" id="sample_datetime" value="${evidence.sample_datetime ? evidence.sample_datetime.replace(' ', 'T').substring(0, 16) : ''}">
+            <label for="sample_datetime" class="active">Sample Date/Time</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col s12">
+            <p class="grey-text"><strong>Dictionary Event Info:</strong></p>
+            <p><strong>Category:</strong> ${escapeHtml(data.event.category || '—')}</p>
+            <p><strong>Lab Categories:</strong></p>
+            ${data.event.lcat1 ? `<p style="margin-left: 20px;">• ${escapeHtml(data.event.lcat1)}</p>` : ''}
+            ${data.event.lcat2 ? `<p style="margin-left: 20px;">• ${escapeHtml(data.event.lcat2)}</p>` : ''}
+          </div>
+        </div>
+      `;
+    } else if (data.event.source === 'ICD') {
+      // ICD event form
+      const evidence = data.evidence[0] || {};
+      formHtml = `
+        <div class="row">
+          <div class="input-field col s12 m6">
+            <i class="material-icons prefix">local_hospital</i>
+            <input type="text" id="icd_code" value="${escapeHtml(evidence.icd_code || data.event.icd10 || '')}" required>
+            <label for="icd_code" class="active">ICD Code *</label>
+          </div>
+          <div class="input-field col s12 m6">
+            <i class="material-icons prefix">event</i>
+            <input type="date" id="event_date" value="${evidence.event_date || ''}">
+            <label for="event_date" class="active">Event Date</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <i class="material-icons prefix">badge</i>
+            <input type="text" id="encounter_id" value="${escapeHtml(evidence.encounter_id || '')}">
+            <label for="encounter_id" class="active">Encounter ID</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-field col s12">
+            <i class="material-icons prefix">notes</i>
+            <textarea id="details" class="materialize-textarea">${escapeHtml(evidence.details || '')}</textarea>
+            <label for="details" class="active">Details</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col s12">
+            <p class="grey-text"><strong>Dictionary Event Info:</strong></p>
+            <p><strong>CTCAE Term:</strong> ${escapeHtml(data.event.ctcae_term || '—')}</p>
+            <p><strong>Admission Grade:</strong> ${escapeHtml(data.event.admission_grade || '—')}</p>
+            ${data.event.outcome1 ? `<p><strong>Outcome 1:</strong> ${escapeHtml(data.event.outcome1)}</p>` : ''}
+            ${data.event.outcome2 ? `<p><strong>Outcome 2:</strong> ${escapeHtml(data.event.outcome2)}</p>` : ''}
+            ${data.event.outcome3 ? `<p><strong>Outcome 3:</strong> ${escapeHtml(data.event.outcome3)}</p>` : ''}
+          </div>
+        </div>
+      `;
+    } else {
+      formHtml = '<p class="red-text">Unknown source type: ' + escapeHtml(data.event.source) + '</p>';
+    }
+
+    formContainer.innerHTML = formHtml;
+    M.updateTextFields(); // Materialize form update
+
+  } catch (err) {
+    console.error('Load details error:', err);
+    formContainer.innerHTML = `<p class="red-text center-align">Failed to load details: ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function saveEventDetails() {
+  if (!currentEventId || !currentEventData) {
+    showToast('No event data loaded', 'error');
+    return;
+  }
+
+  const saveBtn = document.getElementById('save-event-details');
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Saving...';
+
+  try {
+    let payload = {
+      action: 'update_details',
+      case_event_id: currentEventId
+    };
+
+    if (currentEventData.event.source === 'LAB') {
+      payload.test = document.getElementById('test')?.value || '';
+      payload.value = document.getElementById('value')?.value || '';
+      payload.units = document.getElementById('units')?.value || '';
+      payload.ref_low = document.getElementById('ref_low')?.value || '';
+      payload.ref_high = document.getElementById('ref_high')?.value || '';
+      payload.threshold_met = document.getElementById('threshold_met')?.checked ? 1 : 0;
+      payload.sample_datetime = document.getElementById('sample_datetime')?.value || '';
+    } else if (currentEventData.event.source === 'ICD') {
+      payload.icd_code = document.getElementById('icd_code')?.value || '';
+      payload.event_date = document.getElementById('event_date')?.value || '';
+      payload.encounter_id = document.getElementById('encounter_id')?.value || '';
+      payload.details = document.getElementById('details')?.value || '';
+    }
+
+    const res = await fetch('../api/case_event_details.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+
+    const result = await res.json();
+    if (!result.ok) {
+      throw new Error(result.error || 'Failed to save details');
+    }
+
+    showToast('Event details saved successfully', 'success');
+    M.Modal.getInstance(document.getElementById('event-details-modal')).close();
+    await refreshEvents(); // Reload the events table
+
+  } catch (err) {
+    console.error('Save details error:', err);
+    showToast('Failed to save details: ' + err.message, 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<i class="material-icons left">save</i>Save Details';
+  }
 }
 
 function showToast(message, type = 'info') {
   const colors = { success: 'green', error: 'red', info: 'blue', warning: 'orange' };
-  M.toast({ html: `<i class="material-icons left">info</i>${message}`, classes: colors[type] || 'blue' });
+  M.toast({ html: `<i class="material-icons left">info</i>${message}`, classes: colors[type] || 'blue', displayLength: 4000 });
 }
 </script>
 

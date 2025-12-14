@@ -510,7 +510,7 @@ function wireConcomitantModal() {
     saveBtn.addEventListener('click', async () => {
         if (!currentPatientId) return;
 
-        // Collect selected drugs with dates
+        // Collect all checked drugs with their individual dates
         const checkboxes = document.querySelectorAll('.drug-checkbox:checked');
         const concomitants = [];
 
@@ -530,54 +530,37 @@ function wireConcomitantModal() {
         saveBtn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Saving...';
 
         try {
-            // The API expects drug_ids array and single start/stop dates
-            // So we need to call it once per unique date combination
-            // Group drugs by their date combinations
-            const groups = new Map();
-
-            concomitants.forEach(c => {
-                const key = `${c.start_date}|${c.stop_date}`;
-                if (!groups.has(key)) {
-                    groups.set(key, {
-                        start_date: c.start_date,
-                        stop_date: c.stop_date,
-                        drug_ids: []
-                    });
-                }
-                groups.get(key).drug_ids.push(c.drug_id);
+            // Send complete list of concomitants in one API call
+            // API will delete unchecked drugs and insert/update checked ones
+            const res = await fetch('../api/concomitants.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    patient_id: currentPatientId,
+                    concomitants: concomitants
+                })
             });
 
-            // Call API for each group
-            let successCount = 0;
-            for (const [key, group] of groups) {
-                const res = await fetch('../api/concomitants.php', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        patient_id: currentPatientId,
-                        drug_ids: group.drug_ids,
-                        start_date: group.start_date,
-                        stop_date: group.stop_date
-                    })
-                });
-
-                if (!res.ok) {
-                    const text = await res.text();
-                    throw new Error(`HTTP ${res.status}: ${text}`);
-                }
-
-                const result = await res.json();
-                if (!result.ok) {
-                    throw new Error(result.error || 'Failed to save');
-                }
-                successCount += result.inserted || 0;
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`HTTP ${res.status}: ${text}`);
             }
 
-            M.toast({ html: `<i class="material-icons left">check_circle</i>Concomitants saved! (${successCount} updated)`, classes: 'green' });
+            const result = await res.json();
+            if (!result.ok) {
+                throw new Error(result.error || 'Failed to save');
+            }
+
+            const totalChanges = (result.inserted || 0) + (result.deleted || 0);
+            M.toast({
+                html: `<i class="material-icons left">check_circle</i>Concomitants saved! (${result.inserted || 0} added/updated, ${result.deleted || 0} removed)`,
+                classes: 'green',
+                displayLength: 4000
+            });
             M.Modal.getInstance(document.getElementById('concomitant-modal')).close();
             await loadPatients(); // Refresh patient list
 
