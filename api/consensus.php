@@ -1,6 +1,7 @@
 <?php
+header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../inc/db.php'; require_once __DIR__ . '/../inc/auth.php'; require_login();
-function require_roles($r){ $u=$_SESSION['user']??null; if(!$u || !in_array($u['role'],$r,true)){ http_response_code(403); echo "Forbidden"; exit; } }
+function require_roles($r){ $u=$_SESSION['user']??null; if(!$u || !in_array($u['role'],$r,true)){ http_response_code(403); echo json_encode(['error'=>'Forbidden']); exit; } }
 require_roles(['chair','coordinator','admin']);
 $m=$_SERVER['REQUEST_METHOD'];
 if($m==='POST'){ $cid=(int)($_POST['case_event_id']??0); if(!$cid){ http_response_code(400); echo json_encode(['error'=>'Missing case_event_id']); exit; }
@@ -17,4 +18,4 @@ if($m==='POST'){ $cid=(int)($_POST['case_event_id']??0); if(!$cid){ http_respons
  echo json_encode(['ok'=>true,'method'=>$method]); exit; }
 if($m==='GET'){ $cid=(int)($_GET['case_event_id']??0); if(!$cid){ http_response_code(400); echo json_encode(['error'=>'Missing case_event_id']); exit; }
  $st=$pdo->prepare("SELECT * FROM consensus WHERE case_event_id=?"); $st->execute([$cid]); echo json_encode($st->fetch()?:[]); exit; }
-http_response_code(405); echo "Method not allowed";
+http_response_code(405); echo json_encode(['error'=>'Method not allowed']);

@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Determine action links based on status and adjudication count
         let actionHtml = '';
-        if (status === 'consensus' && adjCount >= 3) {
+        if (status === 'consensus') {
           actionHtml = `
             <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light blue">Revise</a>
             <a href="consensus.php?case_event_id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light green">Consensus</a>
