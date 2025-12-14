@@ -1,0 +1,82 @@
+PHOENIX ADJUDICATION - FIXES REQUIRED SUMMARY
+=============================================
+
+Based on your requirements and screenshots, here are the critical issues:
+
+1. THEME - Changed from dark to light ✓
+   - Created: assets/css/theme-light.css
+   - Created: inc/templates/header_light.php
+   - All pages need to switch from header_fixed.php to header_light.php
+
+2. DASHBOARD - Patients table doesn't match screenshot
+   Current: Shows patient cards
+   Required: Table with columns: Patient ID | Index Drug | Randomisation | Follow-up End | Concomitant Drugs | Actions
+   Actions column should have: "OPEN | ADD CONCOMITANT DRUGS" links
+
+3. PATIENT.PHP - Case events table incomplete
+   Current: Shows basic table with Outcome, Index Drug, Concomitant Drugs, Action
+   Required: Outcome | Category | Source | Mark Absent | Status | Adjudications | Actions
+   
+   Actions logic:
+   - If consensus + 3 adjudications: "Revise | Consensus"
+   - If open + has adjudications: "Revise"
+   - If open + no adjudications: "Adjudicate"
+
+4. CASE_EVENT.PHP - Critical Issues
+   a) Form not saving to database
+      - Form posts to ../api/adjudications.php but doesn't work
+      - Need to ensure proper field names and submission
+   
+   b) Missing evidence section
+      - Need to show data from dictionary_event table
+      - Should display: outcome1-3, caveat1-3, lcat criteria
+      - This helps adjudicators make decisions
+
+5. CONSENSUS.PHP - Not working
+   - Form doesn't submit properly
+   - Need to show existing adjudications
+   - Need to show majority preview
+   - Redirect after save not working
+
+6. PERMISSIONS - Inconsistent
+   - Admin: full access ✓
+   - Coordinator: import + consensus ✓
+   - Chair: consensus ✓
+   - Adjudicator/Reviewer: should be able to adjudicate (currently anyone can)
+
+RECOMMENDED APPROACH:
+====================
+
+Given context limitations, I recommend:
+
+Option A: I create complete working versions as NEW files
+   - patient_working.php
+   - case_event_working.php
+   - consensus_working.php
+   - dashboard_working.php
+   
+   You test these, then we rename to replace originals
+
+Option B: I fix files one at a time
+   - Fix patient.php completely
+   - You test
+   - Fix case_event.php
+   - You test
+   - etc.
+
+Option C: I provide you with code snippets
+   - You make the changes manually
+   - I guide you through each one
+
+Which approach would you prefer?
+
+IMMEDIATE NEXT STEPS IF YOU WANT ME TO CONTINUE:
+================================================
+
+Please confirm:
+1. Which files are most critical to fix first?
+2. Should I create NEW working files or update existing ones?
+3. Do you have test data in the database I should know about?
+
+The fixes are extensive but systematic. I can complete them but need
+your guidance on approach given the amount of code involved.
