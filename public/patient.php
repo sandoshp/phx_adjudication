@@ -323,18 +323,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const adjCount = parseInt(ev.adjudications_count) || 0;
         const eventId = ev.id;
 
-        // Determine action links based on status and adjudication count
+        // Determine action links based on adjudication count
         let actionHtml = '';
-        if (status === 'consensus') {
+        if (adjCount >= 2) {
+          // Show Consensus link when there are 2+ adjudications
           actionHtml = `
             <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light blue">Revise</a>
             <a href="consensus.php?case_event_id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light green">Consensus</a>
           `;
         } else if (adjCount > 0) {
+          // Only 1 adjudication - show Revise only
           actionHtml = `
             <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light orange">Revise</a>
           `;
         } else {
+          // No adjudications yet - show Adjudicate
           actionHtml = `
             <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light blue">Adjudicate</a>
           `;
