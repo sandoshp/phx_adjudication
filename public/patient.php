@@ -349,15 +349,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const eventId = ev.id;
         const isAbsent = ev.is_absent === 1 || ev.is_absent === '1';
 
-        // Event management column (Mark Absent / Update Details)
+        // Event management column (Mark Absent / Undo Absent / Update Details)
         let eventMgmtHtml = '';
         if (isAbsent) {
           eventMgmtHtml = `
-            <span class="chip red white-text" style="margin-bottom: 4px; display: block;">Absent</span>
+            <a href="#" class="btn-small waves-effect waves-light orange"
+               onclick="undoAbsent(${eventId}); return false;"
+               style="margin-bottom: 4px; display: block; font-size: 10px; padding: 0 8px;">
+              <i class="material-icons tiny">undo</i> Undo Absent
+            </a>
             <a href="#event-details-modal" class="btn-small waves-effect waves-light blue modal-trigger"
                onclick="openEventDetailsModal(${eventId}); return false;"
                style="font-size: 10px; padding: 0 8px;">
-              <i class="material-icons tiny">edit</i> Details
+              <i class="material-icons tiny">edit</i> Update Details
             </a>
           `;
         } else {
@@ -520,6 +524,43 @@ async function markAbsent(eventId) {
   } catch (err) {
     console.error('Mark absent error:', err);
     showToast('Failed to mark absent: ' + err.message, 'error');
+  }
+}
+
+// Undo absent status for an event
+async function undoAbsent(eventId) {
+  if (!confirm('Restore this event?\n\nThis will re-enable adjudication actions for this event.')) return;
+
+  try {
+    const res = await fetch('../api/case_event_details.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'mark_absent',
+        case_event_id: eventId,
+        is_absent: 0
+      })
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+
+    const result = await res.json();
+    if (!result.ok) {
+      throw new Error(result.error || 'Failed to undo absent');
+    }
+
+    showToast('Event restored successfully', 'success');
+    await window.refreshEvents(); // Reload the events table
+  } catch (err) {
+    console.error('Undo absent error:', err);
+    showToast('Failed to undo absent: ' + err.message, 'error');
   }
 }
 

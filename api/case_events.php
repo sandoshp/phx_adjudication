@@ -23,8 +23,9 @@ try {
       SELECT
         ce.id,
         ce.patient_id,
-		ce.dict_event_id,    
+		ce.dict_event_id,
         ce.status,
+        ce.is_absent,
         ce.onset_datetime,
         ce.phenotype_override,
         ce.is_lab_primary,
