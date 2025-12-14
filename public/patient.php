@@ -65,7 +65,7 @@ if ($ids_in) {
 }
 
 $pageTitle = 'Patient: ' . htmlspecialchars($p['patient_code']);
-require_once __DIR__ . '/../inc/templates/header_fixed.php';
+require_once __DIR__ . '/../inc/templates/header_light.php';
 ?>
 
 <!-- Page Header -->
@@ -277,73 +277,78 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // We need dict_event_id for grouping; make sure API includes "ce.dict_event_id AS dict_event_id"
-      const missing = events.some(ev => ev.dict_event_id == null);
-      if (missing) {
-        console.warn('case_events.php should include ce.dict_event_id AS dict_event_id for proper grouping.');
-      }
-
-      // Unique by dict_event_id (keep first)
-      const unique = new Map();
-      for (const ev of events) {
-        const key = ev.dict_event_id ?? `ce_${ev.id}`; // fallback
-        if (!unique.has(key)) unique.set(key, ev);
-      }
-
-      // Build rows: outcome + index drug if mapped + list of concomitants if mapped
-      const indexDrug = PATIENT_DRUGS.find(d => d.type === 'index');
-      const rows = [];
-      unique.forEach(ev => {
-        const deid = ev.dict_event_id;
-        const mappedDrugIds = EVENT_DRUG_MAP[String(deid)] || [];
-
-        const indexShown = indexDrug && mappedDrugIds.includes(Number(indexDrug.id))
-          ? indexDrug.name
-          : '—';
-
-        const concNames = PATIENT_DRUGS
-          .filter(d => d.type === 'concomitant' && mappedDrugIds.includes(Number(d.id)))
-          .map(d => d.name)
-          .sort((a,b)=>a.localeCompare(b));
-
-        rows.push({
-          outcome: ev.diagnosis || ev.category || '(unnamed)',
-          indexDrug: indexShown,
-          concomitants: concNames,
-          linkId: ev.id
-        });
+      // Display all events with required columns
+      events.sort((a,b)=> {
+        const aName = a.diagnosis || a.category || '';
+        const bName = b.diagnosis || b.category || '';
+        return aName.localeCompare(bName);
       });
 
-      rows.sort((a,b)=> a.outcome.localeCompare(b.outcome));
-
-      // Render Materialize table
+      // Render Materialize table with all required columns
       const table = document.createElement('table');
       table.className = 'striped highlight responsive-table';
       table.innerHTML = `
         <thead>
           <tr>
             <th>Outcome</th>
-            <th>Index Drug</th>
-            <th>Concomitant Drugs</th>
-            <th class="center-align">Action</th>
+            <th>Category</th>
+            <th>Source</th>
+            <th class="center-align">Mark Absent</th>
+            <th>Status</th>
+            <th class="center-align">Adjudications</th>
+            <th class="center-align">Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
       `;
       const tb = table.querySelector('tbody');
 
-      rows.forEach(r => {
+      events.forEach(ev => {
         const tr = document.createElement('tr');
-        const conc = r.concomitants.length ? r.concomitants.join(', ') : '—';
+        const status = ev.status || 'open';
+        const adjCount = parseInt(ev.adjudications_count) || 0;
+        const eventId = ev.id;
+
+        // Determine action links based on status and adjudication count
+        let actionHtml = '';
+        if (status === 'consensus' && adjCount >= 3) {
+          actionHtml = `
+            <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light blue">Revise</a>
+            <a href="consensus.php?case_event_id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light green">Consensus</a>
+          `;
+        } else if (adjCount > 0) {
+          actionHtml = `
+            <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light orange">Revise</a>
+          `;
+        } else {
+          actionHtml = `
+            <a href="case_event.php?id=${encodeURIComponent(eventId)}" class="btn-small waves-effect waves-light blue">Adjudicate</a>
+          `;
+        }
+
+        // Status badge styling
+        let statusBadge = '';
+        if (status === 'consensus') {
+          statusBadge = '<span class="chip green white-text">Consensus</span>';
+        } else if (status === 'submitted') {
+          statusBadge = '<span class="chip orange white-text">Submitted</span>';
+        } else {
+          statusBadge = '<span class="chip grey white-text">Open</span>';
+        }
+
         tr.innerHTML = `
-          <td><strong>${escapeHtml(r.outcome)}</strong></td>
-          <td>${escapeHtml(r.indexDrug)}</td>
-          <td>${escapeHtml(conc)}</td>
+          <td><strong>${escapeHtml(ev.diagnosis || '—')}</strong></td>
+          <td>${escapeHtml(ev.category || '—')}</td>
+          <td>${escapeHtml(ev.source || '—')}</td>
           <td class="center-align">
-            <a href="case_event.php?id=${encodeURIComponent(r.linkId)}" class="btn-small waves-effect waves-light blue">
-              <i class="material-icons left tiny">edit</i>
-              Adjudicate
+            <a href="#" class="btn-small waves-effect waves-light red" onclick="markAbsent(${eventId}); return false;">
+              <i class="material-icons tiny">cancel</i>
             </a>
+          </td>
+          <td>${statusBadge}</td>
+          <td class="center-align"><span class="badge blue white-text">${adjCount}</span></td>
+          <td class="center-align">
+            ${actionHtml}
           </td>
         `;
         tb.appendChild(tr);
@@ -397,6 +402,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   refreshEvents();
 });
+
+// Mark event as absent
+function markAbsent(eventId) {
+  if (!confirm('Mark this event as absent for this patient?')) return;
+
+  // TODO: Implement mark absent functionality
+  // This would call an API endpoint to mark the event as absent
+  showToast('Mark absent functionality to be implemented', 'info');
+}
+
+function showToast(message, type = 'info') {
+  const colors = { success: 'green', error: 'red', info: 'blue', warning: 'orange' };
+  M.toast({ html: `<i class="material-icons left">info</i>${message}`, classes: colors[type] || 'blue' });
+}
 </script>
 
-<?php require_once __DIR__ . '/../inc/templates/footer_fixed.php'; ?>
+<?php require_once __DIR__ . '/../inc/templates/footer_light.php'; ?>

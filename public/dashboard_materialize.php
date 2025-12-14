@@ -12,7 +12,7 @@ $user = current_user();
 $pageTitle = 'Dashboard';
 $customJS = ['assets/js/dashboard.js'];
 
-require_once __DIR__ . '/../inc/templates/header_fixed.php';
+require_once __DIR__ . '/../inc/templates/header_light.php';
 ?>
 
 <!-- Page Header -->
@@ -237,25 +237,53 @@ async function loadPatients() {
             return;
         }
 
-        // Build patient cards
-        let html = '<div class="collection">';
+        // Build patients table
+        let html = `
+            <table class="striped highlight responsive-table">
+                <thead>
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Index Drug</th>
+                        <th>Randomisation</th>
+                        <th>Follow-up End</th>
+                        <th>Concomitant Drugs</th>
+                        <th class="center-align">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
         patients.forEach(p => {
+            const concomitantCount = p.concomitant_count || 0;
+            const concomitantDisplay = concomitantCount > 0
+                ? `<span class="badge blue white-text">${concomitantCount}</span>`
+                : '<span class="grey-text">None</span>';
+
             html += `
-                <a href="patient.php?id=${p.id}" class="collection-item avatar">
-                    <i class="material-icons circle blue">person</i>
-                    <span class="title"><strong>${escapeHtml(p.patient_code)}</strong></span>
-                    <p>
-                        Index Drug: ${escapeHtml(p.index_drug_name || 'N/A')}<br>
-                        Randomised: ${escapeHtml(p.randomisation_date || 'N/A')}<br>
-                        Follow-up End: ${escapeHtml(p.followup_end_date || 'N/A')}
-                    </p>
-                    <span class="secondary-content">
-                        <i class="material-icons blue-text">chevron_right</i>
-                    </span>
-                </a>
+                <tr>
+                    <td><strong>${escapeHtml(p.patient_code)}</strong></td>
+                    <td>${escapeHtml(p.index_drug_name || 'N/A')}</td>
+                    <td>${escapeHtml(p.randomisation_date || '—')}</td>
+                    <td>${escapeHtml(p.followup_end_date || '—')}</td>
+                    <td>${concomitantDisplay}</td>
+                    <td class="center-align">
+                        <a href="patient.php?id=${p.id}" class="btn-small waves-effect waves-light blue">
+                            <i class="material-icons left tiny">open_in_new</i>
+                            OPEN
+                        </a>
+                        <a href="patient_concomitants.php?id=${p.id}" class="btn-small waves-effect waves-light orange">
+                            <i class="material-icons left tiny">add</i>
+                            ADD DRUGS
+                        </a>
+                    </td>
+                </tr>
             `;
         });
-        html += '</div>';
+
+        html += `
+                </tbody>
+            </table>
+        `;
 
         container.innerHTML = html;
 
@@ -340,4 +368,4 @@ function escapeHtml(text) {
 }
 </script>
 
-<?php require_once __DIR__ . '/../inc/templates/footer_fixed.php'; ?>
+<?php require_once __DIR__ . '/../inc/templates/footer_light.php'; ?>
