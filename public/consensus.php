@@ -47,7 +47,7 @@ $adjStmt = $pdo->prepare("
     FROM adjudication a
     JOIN users u ON u.id = a.adjudicator_id
     WHERE a.case_event_id = ?
-    ORDER BY a.adjudicated_at DESC
+    ORDER BY a.submitted_at DESC
 ");
 $adjStmt->execute([$case_event_id]);
 $adjudications = $adjStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -205,7 +205,7 @@ require_once __DIR__ . '/../inc/templates/header_light.php';
                                     <td><?= htmlspecialchars($adj['severity']) ?></td>
                                     <td><?= htmlspecialchars($adj['expectedness']) ?></td>
                                     <td><?= htmlspecialchars($adj['framework']) ?></td>
-                                    <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($adj['adjudicated_at']))) ?></td>
+                                    <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($adj['submitted_at']))) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
