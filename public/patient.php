@@ -290,12 +290,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return f ? f.name : String(id);
   }
 
-  function escapeHtml(s) {
+  // Make escapeHtml and refreshEvents globally accessible
+  window.escapeHtml = function(s) {
     return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
+  };
 
-  async function refreshEvents() {
+  window.refreshEvents = async function() {
     wrap.innerHTML = '<div class="progress"><div class="indeterminate blue"></div></div><p class="center-align grey-text">Loading events...</p>';
+
+    const escapeHtml = window.escapeHtml; // Local alias
 
     try {
       const events = await fetchEvents();
@@ -476,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalElem = document.getElementById('event-details-modal');
   M.Modal.init(modalElem, {});
 
-  refreshEvents();
+  window.refreshEvents();
 });
 
 // Global variables for modal state
@@ -513,7 +516,7 @@ async function markAbsent(eventId) {
     }
 
     showToast('Event marked as absent', 'success');
-    await refreshEvents(); // Reload the events table
+    await window.refreshEvents(); // Reload the events table
   } catch (err) {
     console.error('Mark absent error:', err);
     showToast('Failed to mark absent: ' + err.message, 'error');
@@ -524,6 +527,7 @@ async function openEventDetailsModal(eventId) {
   currentEventId = eventId;
   const modal = M.Modal.getInstance(document.getElementById('event-details-modal'));
   const formContainer = document.getElementById('event-details-form');
+  const escapeHtml = window.escapeHtml; // Local alias
 
   formContainer.innerHTML = '<div class="progress"><div class="indeterminate blue"></div></div><p class="center-align grey-text">Loading event details...</p>';
 
@@ -712,7 +716,7 @@ async function saveEventDetails() {
 
     showToast('Event details saved successfully', 'success');
     M.Modal.getInstance(document.getElementById('event-details-modal')).close();
-    await refreshEvents(); // Reload the events table
+    await window.refreshEvents(); // Reload the events table
 
   } catch (err) {
     console.error('Save details error:', err);
