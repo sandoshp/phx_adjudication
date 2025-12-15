@@ -648,29 +648,44 @@ async function openEventDetailsModal(eventId) {
 
         <div class="row">
           <div class="col s12">
-            <h6 class="grey-text"><i class="material-icons tiny">info</i> Dictionary Event Information</h6>
-            <table class="striped" style="font-size: 0.9em;">
-              <tbody>
-                <tr><td style="width: 200px;"><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
-                <tr><td><strong>Category:</strong></td><td>${escapeHtml(data.event.category || '—')}</td></tr>
-                <tr><td><strong>Source:</strong></td><td><span class="chip ${data.event.source === 'LAB' ? 'blue' : 'purple'} white-text">${escapeHtml(data.event.source || '—')}</span></td></tr>
-                ${data.event.active !== undefined ? `<tr><td><strong>Active:</strong></td><td>${data.event.active ? '<span class="green-text">✓ Yes</span>' : '<span class="red-text">✗ No</span>'}</td></tr>` : ''}
+            <h6 class="grey-text"><i class="material-icons tiny">category</i> CTCAE Event Categorization</h6>
+            <p class="grey-text" style="font-size: 0.9em; margin-bottom: 15px;">
+              Select one CTCAE v5 and one CTCAE v6 diagnosis that best matches this event outcome.
+              The original diagnosis "<strong>${escapeHtml(data.event.diagnosis)}</strong>" will be retained as the key outcome term.
+            </p>
+          </div>
+        </div>
 
-                ${data.event.ctcae_term || data.event.ctcae_code || data.event.ctcae_version ? `<tr><td colspan="2" style="background: #e3f2fd; padding: 8px; margin-top: 8px;"><strong>CTCAE Information</strong></td></tr>` : ''}
-                ${data.event.ctcae_term ? `<tr><td style="padding-left: 20px;">CTCAE Term:</td><td>${escapeHtml(data.event.ctcae_term)}</td></tr>` : ''}
-                ${data.event.ctcae_code ? `<tr><td style="padding-left: 20px;">CTCAE Code:</td><td>${escapeHtml(data.event.ctcae_code)}</td></tr>` : ''}
-                ${data.event.ctcae_version ? `<tr><td style="padding-left: 20px;">CTCAE Version:</td><td>${escapeHtml(data.event.ctcae_version)}</td></tr>` : ''}
+        <div class="row">
+          <!-- Left side: Selection boxes -->
+          <div class="col s12 m6">
+            <div style="margin-bottom: 20px;">
+              <label style="font-weight: 600; color: #1976d2;"><i class="material-icons tiny">5</i> CTCAE Version 5 Diagnoses</label>
+              <select id="ctcae-v5-select" class="browser-default" size="8" style="width: 100%; padding: 8px; border: 2px solid #1976d2; border-radius: 4px;">
+                <option value="">-- Select CTCAE v5 Diagnosis --</option>
+                ${data.dict_events_v5.map(de =>
+                  `<option value="${de.id}" ${evidence.dict_event_v5_id == de.id ? 'selected' : ''}>${escapeHtml(de.diagnosis)}</option>`
+                ).join('')}
+              </select>
+            </div>
 
-                ${data.event.lcat1 ? `<tr><td colspan="2" style="background: #e8f5e9; padding: 8px; margin-top: 8px;"><strong>Lab Category 1:</strong> ${escapeHtml(data.event.lcat1)}</td></tr>` : ''}
-                ${data.event.lcat1_met1 ? `<tr><td style="padding-left: 20px;">Met Criteria 1:</td><td>${escapeHtml(data.event.lcat1_met1)}</td></tr>` : ''}
-                ${data.event.lcat1_met2 ? `<tr><td style="padding-left: 20px;">Met Criteria 2:</td><td>${escapeHtml(data.event.lcat1_met2)}</td></tr>` : ''}
-                ${data.event.lcat1_notmet ? `<tr><td style="padding-left: 20px;">Not Met:</td><td>${escapeHtml(data.event.lcat1_notmet)}</td></tr>` : ''}
+            <div>
+              <label style="font-weight: 600; color: #7b1fa2;"><i class="material-icons tiny">6</i> CTCAE Version 6 Diagnoses</label>
+              <select id="ctcae-v6-select" class="browser-default" size="8" style="width: 100%; padding: 8px; border: 2px solid #7b1fa2; border-radius: 4px;">
+                <option value="">-- Select CTCAE v6 Diagnosis --</option>
+                ${data.dict_events_v6.map(de =>
+                  `<option value="${de.id}" ${evidence.dict_event_v6_id == de.id ? 'selected' : ''}>${escapeHtml(de.diagnosis)}</option>`
+                ).join('')}
+              </select>
+            </div>
+          </div>
 
-                ${data.event.lcat2 ? `<tr><td colspan="2" style="background: #e8f5e9; padding: 8px; margin-top: 8px;"><strong>Lab Category 2:</strong> ${escapeHtml(data.event.lcat2)}</td></tr>` : ''}
-                ${data.event.lcat2_met1 ? `<tr><td style="padding-left: 20px;">Met Criteria:</td><td>${escapeHtml(data.event.lcat2_met1)}</td></tr>` : ''}
-                ${data.event.lcat2_notmet ? `<tr><td style="padding-left: 20px;">Not Met:</td><td>${escapeHtml(data.event.lcat2_notmet)}</td></tr>` : ''}
-              </tbody>
-            </table>
+          <!-- Right side: Detail display panel -->
+          <div class="col s12 m6">
+            <label style="font-weight: 600;"><i class="material-icons tiny">info</i> Dictionary Event Details</label>
+            <div id="ctcae-detail-panel" style="border: 1px solid #e0e0e0; padding: 12px; min-height: 420px; max-height: 500px; overflow-y: auto; background: #fafafa; border-radius: 4px;">
+              <p class="grey-text center-align" style="margin-top: 150px;"><i class="material-icons" style="font-size: 48px;">info_outline</i><br>Select a diagnosis to view details</p>
+            </div>
           </div>
         </div>
       `;
@@ -710,34 +725,44 @@ async function openEventDetailsModal(eventId) {
 
         <div class="row">
           <div class="col s12">
-            <h6 class="grey-text"><i class="material-icons tiny">info</i> Dictionary Event Information</h6>
-            <table class="striped" style="font-size: 0.9em;">
-              <tbody>
-                <tr><td style="width: 200px;"><strong>Diagnosis:</strong></td><td>${escapeHtml(data.event.diagnosis || '—')}</td></tr>
-                <tr><td><strong>Category:</strong></td><td>${escapeHtml(data.event.category || '—')}</td></tr>
-                <tr><td><strong>Source:</strong></td><td><span class="chip ${data.event.source === 'LAB' ? 'blue' : 'purple'} white-text">${escapeHtml(data.event.source || '—')}</span></td></tr>
-                ${data.event.active !== undefined ? `<tr><td><strong>Active:</strong></td><td>${data.event.active ? '<span class="green-text">✓ Yes</span>' : '<span class="red-text">✗ No</span>'}</td></tr>` : ''}
-                ${data.event.icd10 ? `<tr><td><strong>ICD-10 Code:</strong></td><td><code>${escapeHtml(data.event.icd10)}</code></td></tr>` : ''}
-                ${data.event.admission_grade ? `<tr><td><strong>Admission Grade:</strong></td><td>${escapeHtml(data.event.admission_grade)}</td></tr>` : ''}
+            <h6 class="grey-text"><i class="material-icons tiny">category</i> CTCAE Event Categorization</h6>
+            <p class="grey-text" style="font-size: 0.9em; margin-bottom: 15px;">
+              Select one CTCAE v5 and one CTCAE v6 diagnosis that best matches this event outcome.
+              The original diagnosis "<strong>${escapeHtml(data.event.diagnosis)}</strong>" will be retained as the key outcome term.
+            </p>
+          </div>
+        </div>
 
-                ${data.event.ctcae_term || data.event.ctcae_code || data.event.ctcae_version ? `<tr><td colspan="2" style="background: #e3f2fd; padding: 8px; margin-top: 8px;"><strong>CTCAE Information</strong></td></tr>` : ''}
-                ${data.event.ctcae_term ? `<tr><td style="padding-left: 20px;">CTCAE Term:</td><td>${escapeHtml(data.event.ctcae_term)}</td></tr>` : ''}
-                ${data.event.ctcae_code ? `<tr><td style="padding-left: 20px;">CTCAE Code:</td><td>${escapeHtml(data.event.ctcae_code)}</td></tr>` : ''}
-                ${data.event.ctcae_version ? `<tr><td style="padding-left: 20px;">CTCAE Version:</td><td>${escapeHtml(data.event.ctcae_version)}</td></tr>` : ''}
+        <div class="row">
+          <!-- Left side: Selection boxes -->
+          <div class="col s12 m6">
+            <div style="margin-bottom: 20px;">
+              <label style="font-weight: 600; color: #1976d2;"><i class="material-icons tiny">5</i> CTCAE Version 5 Diagnoses</label>
+              <select id="ctcae-v5-select" class="browser-default" size="8" style="width: 100%; padding: 8px; border: 2px solid #1976d2; border-radius: 4px;">
+                <option value="">-- Select CTCAE v5 Diagnosis --</option>
+                ${data.dict_events_v5.map(de =>
+                  `<option value="${de.id}" ${evidence.dict_event_v5_id == de.id ? 'selected' : ''}>${escapeHtml(de.diagnosis)}</option>`
+                ).join('')}
+              </select>
+            </div>
 
-                ${data.event.caveat1 || data.event.outcome1 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 8px; margin-top: 8px;"><strong>Caveat 1</strong></td></tr>` : ''}
-                ${data.event.caveat1 ? `<tr><td style="padding-left: 20px;">Caveat:</td><td>${escapeHtml(data.event.caveat1)}</td></tr>` : ''}
-                ${data.event.outcome1 ? `<tr><td style="padding-left: 20px;">Outcome:</td><td>${escapeHtml(data.event.outcome1)}</td></tr>` : ''}
+            <div>
+              <label style="font-weight: 600; color: #7b1fa2;"><i class="material-icons tiny">6</i> CTCAE Version 6 Diagnoses</label>
+              <select id="ctcae-v6-select" class="browser-default" size="8" style="width: 100%; padding: 8px; border: 2px solid #7b1fa2; border-radius: 4px;">
+                <option value="">-- Select CTCAE v6 Diagnosis --</option>
+                ${data.dict_events_v6.map(de =>
+                  `<option value="${de.id}" ${evidence.dict_event_v6_id == de.id ? 'selected' : ''}>${escapeHtml(de.diagnosis)}</option>`
+                ).join('')}
+              </select>
+            </div>
+          </div>
 
-                ${data.event.caveat2 || data.event.outcome2 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 8px; margin-top: 8px;"><strong>Caveat 2</strong></td></tr>` : ''}
-                ${data.event.caveat2 ? `<tr><td style="padding-left: 20px;">Caveat:</td><td>${escapeHtml(data.event.caveat2)}</td></tr>` : ''}
-                ${data.event.outcome2 ? `<tr><td style="padding-left: 20px;">Outcome:</td><td>${escapeHtml(data.event.outcome2)}</td></tr>` : ''}
-
-                ${data.event.caveat3 || data.event.outcome3 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 8px; margin-top: 8px;"><strong>Caveat 3</strong></td></tr>` : ''}
-                ${data.event.caveat3 ? `<tr><td style="padding-left: 20px;">Caveat:</td><td>${escapeHtml(data.event.caveat3)}</td></tr>` : ''}
-                ${data.event.outcome3 ? `<tr><td style="padding-left: 20px;">Outcome:</td><td>${escapeHtml(data.event.outcome3)}</td></tr>` : ''}
-              </tbody>
-            </table>
+          <!-- Right side: Detail display panel -->
+          <div class="col s12 m6">
+            <label style="font-weight: 600;"><i class="material-icons tiny">info</i> Dictionary Event Details</label>
+            <div id="ctcae-detail-panel" style="border: 1px solid #e0e0e0; padding: 12px; min-height: 420px; max-height: 500px; overflow-y: auto; background: #fafafa; border-radius: 4px;">
+              <p class="grey-text center-align" style="margin-top: 150px;"><i class="material-icons" style="font-size: 48px;">info_outline</i><br>Select a diagnosis to view details</p>
+            </div>
           </div>
         </div>
       `;
@@ -747,6 +772,98 @@ async function openEventDetailsModal(eventId) {
 
     formContainer.innerHTML = formHtml;
     M.updateTextFields(); // Materialize form update
+
+    // Wire up CTCAE selection event handlers
+    const v5Select = document.getElementById('ctcae-v5-select');
+    const v6Select = document.getElementById('ctcae-v6-select');
+    const detailPanel = document.getElementById('ctcae-detail-panel');
+
+    // Function to display dictionary event details
+    function displayDictEventDetails(dictEventId, version) {
+      if (!dictEventId) {
+        detailPanel.innerHTML = '<p class="grey-text center-align" style="margin-top: 150px;"><i class="material-icons" style="font-size: 48px;">info_outline</i><br>Select a diagnosis to view details</p>';
+        return;
+      }
+
+      // Find the selected dictionary event
+      const allEvents = [...data.dict_events_v5, ...data.dict_events_v6];
+      const selectedEvent = allEvents.find(de => de.id == dictEventId);
+
+      if (!selectedEvent) {
+        detailPanel.innerHTML = '<p class="red-text">Event not found</p>';
+        return;
+      }
+
+      // Build detail display
+      const versionColor = version === 'v5' ? '#1976d2' : '#7b1fa2';
+      let detailHtml = `
+        <div style="border-left: 4px solid ${versionColor}; padding-left: 12px; margin-bottom: 15px;">
+          <h6 style="margin: 0; color: ${versionColor}; font-weight: 600;">${escapeHtml(selectedEvent.diagnosis)}</h6>
+          <p style="margin: 5px 0 0 0; font-size: 0.85em; color: #666;">CTCAE ${escapeHtml(selectedEvent.ctcae_version || '—')}</p>
+        </div>
+        <table class="striped" style="font-size: 0.85em;">
+          <tbody>
+            <tr><td style="width: 140px;"><strong>Category:</strong></td><td>${escapeHtml(selectedEvent.category || '—')}</td></tr>
+            <tr><td><strong>Source:</strong></td><td><span class="chip ${selectedEvent.source === 'LAB' ? 'blue' : 'purple'} white-text" style="font-size: 0.75em; height: 22px; line-height: 22px;">${escapeHtml(selectedEvent.source || '—')}</span></td></tr>
+            ${selectedEvent.icd10 ? `<tr><td><strong>ICD-10:</strong></td><td><code>${escapeHtml(selectedEvent.icd10)}</code></td></tr>` : ''}
+            ${selectedEvent.admission_grade ? `<tr><td><strong>Admission Grade:</strong></td><td>${escapeHtml(selectedEvent.admission_grade)}</td></tr>` : ''}
+            ${selectedEvent.active !== undefined ? `<tr><td><strong>Active:</strong></td><td>${selectedEvent.active ? '<span class="green-text">✓ Yes</span>' : '<span class="red-text">✗ No</span>'}</td></tr>` : ''}
+
+            ${selectedEvent.ctcae_term || selectedEvent.ctcae_code ? `<tr><td colspan="2" style="background: #e3f2fd; padding: 6px; margin-top: 6px; font-weight: 600;">CTCAE Information</td></tr>` : ''}
+            ${selectedEvent.ctcae_term ? `<tr><td style="padding-left: 15px;">CTCAE Term:</td><td>${escapeHtml(selectedEvent.ctcae_term)}</td></tr>` : ''}
+            ${selectedEvent.ctcae_code ? `<tr><td style="padding-left: 15px;">CTCAE Code:</td><td>${escapeHtml(selectedEvent.ctcae_code)}</td></tr>` : ''}
+
+            ${selectedEvent.lcat1 ? `<tr><td colspan="2" style="background: #e8f5e9; padding: 6px; margin-top: 6px; font-weight: 600;">Lab Category 1: ${escapeHtml(selectedEvent.lcat1)}</td></tr>` : ''}
+            ${selectedEvent.lcat1_met1 ? `<tr><td style="padding-left: 15px;">Met Criteria 1:</td><td>${escapeHtml(selectedEvent.lcat1_met1)}</td></tr>` : ''}
+            ${selectedEvent.lcat1_met2 ? `<tr><td style="padding-left: 15px;">Met Criteria 2:</td><td>${escapeHtml(selectedEvent.lcat1_met2)}</td></tr>` : ''}
+            ${selectedEvent.lcat1_notmet ? `<tr><td style="padding-left: 15px;">Not Met:</td><td>${escapeHtml(selectedEvent.lcat1_notmet)}</td></tr>` : ''}
+
+            ${selectedEvent.lcat2 ? `<tr><td colspan="2" style="background: #e8f5e9; padding: 6px; margin-top: 6px; font-weight: 600;">Lab Category 2: ${escapeHtml(selectedEvent.lcat2)}</td></tr>` : ''}
+            ${selectedEvent.lcat2_met1 ? `<tr><td style="padding-left: 15px;">Met Criteria:</td><td>${escapeHtml(selectedEvent.lcat2_met1)}</td></tr>` : ''}
+            ${selectedEvent.lcat2_notmet ? `<tr><td style="padding-left: 15px;">Not Met:</td><td>${escapeHtml(selectedEvent.lcat2_notmet)}</td></tr>` : ''}
+
+            ${selectedEvent.caveat1 || selectedEvent.outcome1 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 6px; margin-top: 6px; font-weight: 600;">Caveat 1</td></tr>` : ''}
+            ${selectedEvent.caveat1 ? `<tr><td style="padding-left: 15px;">Caveat:</td><td>${escapeHtml(selectedEvent.caveat1)}</td></tr>` : ''}
+            ${selectedEvent.outcome1 ? `<tr><td style="padding-left: 15px;">Outcome:</td><td>${escapeHtml(selectedEvent.outcome1)}</td></tr>` : ''}
+
+            ${selectedEvent.caveat2 || selectedEvent.outcome2 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 6px; margin-top: 6px; font-weight: 600;">Caveat 2</td></tr>` : ''}
+            ${selectedEvent.caveat2 ? `<tr><td style="padding-left: 15px;">Caveat:</td><td>${escapeHtml(selectedEvent.caveat2)}</td></tr>` : ''}
+            ${selectedEvent.outcome2 ? `<tr><td style="padding-left: 15px;">Outcome:</td><td>${escapeHtml(selectedEvent.outcome2)}</td></tr>` : ''}
+
+            ${selectedEvent.caveat3 || selectedEvent.outcome3 ? `<tr><td colspan="2" style="background: #fff3e0; padding: 6px; margin-top: 6px; font-weight: 600;">Caveat 3</td></tr>` : ''}
+            ${selectedEvent.caveat3 ? `<tr><td style="padding-left: 15px;">Caveat:</td><td>${escapeHtml(selectedEvent.caveat3)}</td></tr>` : ''}
+            ${selectedEvent.outcome3 ? `<tr><td style="padding-left: 15px;">Outcome:</td><td>${escapeHtml(selectedEvent.outcome3)}</td></tr>` : ''}
+          </tbody>
+        </table>
+      `;
+
+      detailPanel.innerHTML = detailHtml;
+    }
+
+    // Add event listeners for selection changes
+    if (v5Select) {
+      v5Select.addEventListener('change', function() {
+        displayDictEventDetails(this.value, 'v5');
+      });
+
+      // Pre-populate detail panel if v5 is pre-selected
+      const evidence = data.evidence[0] || {};
+      if (evidence.dict_event_v5_id) {
+        displayDictEventDetails(evidence.dict_event_v5_id, 'v5');
+      }
+    }
+
+    if (v6Select) {
+      v6Select.addEventListener('change', function() {
+        displayDictEventDetails(this.value, 'v6');
+      });
+
+      // Pre-populate detail panel if v6 is pre-selected (but only if v5 wasn't)
+      const evidence = data.evidence[0] || {};
+      if (evidence.dict_event_v6_id && !evidence.dict_event_v5_id) {
+        displayDictEventDetails(evidence.dict_event_v6_id, 'v6');
+      }
+    }
 
   } catch (err) {
     console.error('Load details error:', err);
@@ -770,6 +887,12 @@ async function saveEventDetails() {
       case_event_id: currentEventId
     };
 
+    // Get CTCAE categorization selections
+    const v5Select = document.getElementById('ctcae-v5-select');
+    const v6Select = document.getElementById('ctcae-v6-select');
+    const dict_event_v5_id = v5Select?.value ? parseInt(v5Select.value) : null;
+    const dict_event_v6_id = v6Select?.value ? parseInt(v6Select.value) : null;
+
     if (currentEventData.event.source === 'LAB') {
       payload.test = document.getElementById('test')?.value || '';
       payload.value = document.getElementById('value')?.value || '';
@@ -778,11 +901,15 @@ async function saveEventDetails() {
       payload.ref_high = document.getElementById('ref_high')?.value || '';
       payload.threshold_met = document.getElementById('threshold_met')?.checked ? 1 : 0;
       payload.sample_datetime = document.getElementById('sample_datetime')?.value || '';
+      payload.dict_event_v5_id = dict_event_v5_id;
+      payload.dict_event_v6_id = dict_event_v6_id;
     } else if (currentEventData.event.source === 'ICD') {
       payload.icd_code = document.getElementById('icd_code')?.value || '';
       payload.event_date = document.getElementById('event_date')?.value || '';
       payload.encounter_id = document.getElementById('encounter_id')?.value || '';
       payload.details = document.getElementById('details')?.value || '';
+      payload.dict_event_v5_id = dict_event_v5_id;
+      payload.dict_event_v6_id = dict_event_v6_id;
     }
 
     const res = await fetch('../api/case_event_details.php', {
